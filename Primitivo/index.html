@@ -928,40 +928,7 @@
     }
     .form-submit:hover { background:var(--red-hot); box-shadow:0 0 30px rgba(231,76,60,.4); }
 
-    /* ═══════════════════════════════
-       TESTIMONIALS
-    ═══════════════════════════════ */
-    #testimonials {
-      padding: 6rem 3rem;
-      background: var(--noir);
-    }
-
-    .testi-grid {
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:2px; margin-top:3rem;
-    }
-
-    .testi-card {
-      background:var(--charcoal);
-      padding:2.5rem;
-      border-left:3px solid var(--red);
-      position:relative;
-    }
-
-    .testi-mark {
-      position:absolute; top:1rem; right:1.5rem;
-      font-family:'Permanent Marker',cursive;
-      font-size:5rem; color:rgba(192,57,43,.1); line-height:1;
-    }
-
-    .testi-stars { color:var(--red-hot); letter-spacing:3px; margin-bottom:1rem; font-size:.9rem; }
-    .testi-text { font-size:.88rem; line-height:1.85; color:rgba(212,201,176,.6); margin-bottom:1.5rem; }
-    .testi-name {
-      font-family:'Bebas Neue',sans-serif;
-      font-size:.75rem; letter-spacing:4px; color:var(--red-hot); margin-bottom:.1rem;
-    }
-    .testi-detail { font-size:.75rem; color:var(--fog); }
+    
 
     /* ═══════════════════════════════
        FOOTER
@@ -1031,18 +998,50 @@
     /* ═══════════════════════════════
        RESPONSIVE
     ═══════════════════════════════ */
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: .5rem;
+      background: none;
+      border: none;
+    }
+    .nav-hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--bone);
+      transition: all .3s;
+    }
+    .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-hamburger.open span:nth-child(2) { opacity: 0; }
+    .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
     @media(max-width:900px){
+      .nav-hamburger { display: flex; }
+      .nav-links {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(13,13,13,.97);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2.5rem;
+        z-index: 150;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { font-size: 1.5rem; letter-spacing: 5px; }
       nav { padding:.9rem 1.5rem; }
-      .nav-links { display:none; }
       #hero { grid-template-columns:1fr; padding:7rem 1.5rem 3rem; text-align:center; }
       .hero-mascot { order:-1; }
       .hero-mascot img { max-width:260px; }
       .hero-desc { margin:0 auto 2rem; }
       .hero-buttons { justify-content:center; }
       .hero-eyebrow { justify-content:center; }
-      .services-grid, .portfolio-grid { grid-template-columns:1fr; }
+      .services-grid { grid-template-columns:1fr; }
       .port-item:nth-child(1) { grid-column:auto; grid-row:auto; }
-      
       .appt-grid { grid-template-columns:1fr; gap:2rem; }
       .testi-grid { grid-template-columns:1fr; }
       .footer-grid { grid-template-columns:1fr 1fr; }
@@ -1072,6 +1071,9 @@
     <li><a href="#services">Servicios</a></li>
   </ul>
   <a href="#appointment" class="nav-cta">Pedir Cita</a>
+  <button class="nav-hamburger" id="nav-hamburger" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
 
 <!-- ══════ HERO ══════ -->
@@ -1400,14 +1402,14 @@
   <div id="lightbox-meta" style="position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);text-align:center;"></div>
 </div>
 <script>
-function abrirLightbox(url, categoria, artista) {
+function abrirLightbox(url, categoria, nombreOArtista) {
   const lb = document.getElementById('lightbox');
   const img = document.getElementById('lightbox-img');
   const meta = document.getElementById('lightbox-meta');
   img.src = url;
   meta.innerHTML = categoria
     ? `<p style="font-family:'Bebas Neue';letter-spacing:5px;font-size:.65rem;color:var(--red-hot);margin-bottom:.3rem;">${categoria}</p>
-       <p style="font-family:'Permanent Marker';font-size:1.1rem;color:var(--cream);text-shadow:1px 1px 0 var(--red);">Por: ${artista}</p>`
+       <p style="font-family:'Permanent Marker';font-size:1.1rem;color:var(--cream);text-shadow:1px 1px 0 var(--red);">${nombreOArtista}</p>`
     : '';
   lb.style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -1437,38 +1439,63 @@ document.addEventListener('keydown', function(e) {
   });
 </script>
 
+
+
 <script>
     const URLS = {
         tienda:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3B1Y6G0ogyenX4ehIDaQhhHaGBRlRfa4kl9w6_0aXpv-TcMr_UFsaOStRcg_8iwujDGbKn7bpmoi/pub?gid=0&single=true&output=csv',
         portafolio: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3B1Y6G0ogyenX4ehIDaQhhHaGBRlRfa4kl9w6_0aXpv-TcMr_UFsaOStRcg_8iwujDGbKn7bpmoi/pub?gid=631754337&single=true&output=csv'
     };
 
+
+
+    // ── Parser CSV robusto (maneja campos con comas entre comillas) ──
+    function parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') {
+                if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+                else { inQuotes = !inQuotes; }
+            } else if (ch === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += ch;
+            }
+        }
+        result.push(current.trim());
+        return result;
+    }
+
     // ── Convierte cualquier formato de imagen a URL pública usable ──
-    function fixImgUrl(url) {
-        if (!url) return '';
-        url = url.trim().replace(/^["']|["']$/g, '');
+    function fixImgUrl(urlRaw) {
+        if (!urlRaw) return "";
 
-        // Formato AppSheet: "1ABC123XYZ_nombre.jpg" → extrae ID antes del primer "_"
-        // El ID de Drive tiene exactamente 33 caracteres alfanuméricos con guiones
-        const appsheet = url.match(/^([A-Za-z0-9_-]{25,}?)_[^\/]+\.(jpg|jpeg|png|gif|webp)/i);
-        if (appsheet) {
-            return `https://drive.google.com/thumbnail?id=${appsheet[1]}&sz=w800`;
+        // 1. Ya es URL pública (Cloudinary, http, etc) — usar directamente
+        if (urlRaw.startsWith("https://") || urlRaw.startsWith("http://")) {
+            return urlRaw;
         }
 
-        // Formato URL de Drive: /file/d/ID/view  o  /d/ID
-        const driveFile = url.match(/\/(?:file\/)?d\/([A-Za-z0-9_-]{25,})/);
-        if (driveFile) {
-            return `https://drive.google.com/thumbnail?id=${driveFile[1]}&sz=w800`;
+        // 2. Ruta de AppSheet (Tienda_Images/ o Portafolio_Images/ etc)
+        if (urlRaw.includes("_Images/")) {
+            const appId = "primitivo-145461927";
+            // Detectar tabla según prefijo
+            let tabla = "Portafolio";
+            if (urlRaw.toLowerCase().includes("tienda")) tabla = "Tienda";
+
+            return `https://www.appsheet.com/template/gettablefileurl?appName=${appId}&tableName=${tabla}&fileName=${encodeURIComponent(urlRaw)}`;
         }
 
-        // Formato uc?export=view&id=ID  o  thumbnail?id=ID
-        const driveId = url.match(/[?&]id=([A-Za-z0-9_-]{25,})/);
-        if (driveId) {
-            return `https://drive.google.com/thumbnail?id=${driveId[1]}&sz=w800`;
+        // 3. Link de Google Drive con ID
+        if (urlRaw.includes("id=")) {
+            const id = urlRaw.split("id=")[1].split("&")[0];
+            return `https://lh3.googleusercontent.com/d/${id}`;
         }
 
-        // Cualquier otra URL (imgur, cloudinary, etc.) se usa tal cual
-        return url;
+        return urlRaw;
     }
 
     async function cargarTienda() {
@@ -1482,30 +1509,31 @@ document.addEventListener('keydown', function(e) {
             console.log('🛒 Tienda - filas cargadas:', lineas.length);
 
             lineas.forEach((linea, idx) => {
-                const partes = linea.split(',');
-                if (partes.length < 6) return;
+                const partes = parseCSVLine(linea);
+                if (partes.length < 4) return;
 
-                const categoria = partes[0].trim().replace(/^"|"$/g, '');
-                const nombre    = partes[1].trim().replace(/^"|"$/g, '');
-                const precio    = partes[2].trim().replace(/^"|"$/g, '');
-                const esNuevo   = (partes[4] || '').trim().replace(/^"|"$/g, '').toLowerCase();
+                const categoria = partes[0];
+                const nombre    = partes[1];
+                const precio    = partes[2];
+                const urlRaw    = partes[3] || ''; // col D = Imagen_URL
+                const esNuevo   = (partes[4] || '').toLowerCase(); // col E = Es_Nuevo
                 const flagNuevo = esNuevo === 'si' ? 'si' : '';
 
-                // col F (índice 5) = link_web, join por si la URL tiene comas
-                const urlRaw = partes.slice(5).join(',').trim().replace(/^"|"$/g, '');
                 const urlImg = fixImgUrl(urlRaw);
-                console.log(`🛒 Fila ${idx+1} | link_web: "${urlRaw}" → "${urlImg}"`);
+                console.log(`🛒 Fila ${idx+1} | Imagen_URL: "${urlRaw}" → "${urlImg}"`);
 
                 if (!urlImg) return;
 
+                const nomEsc = nombre.replace(/'/g, "\\'");
+                const catEsc2 = categoria.replace(/'/g, "\\'");
                 contenedor.innerHTML += `
-                    <div class="merch-card">
+                    <div class="merch-card" onclick="abrirLightbox('${urlImg}', '${catEsc2}', '${nomEsc}')">
                         <div class="merch-thumb">
                             <img src="${urlImg}" alt="${nombre}"
                                  style="width:100%;height:100%;object-fit:cover;position:absolute;"
                                  onerror="console.error('❌ Imagen no cargó:', '${urlImg}'); this.style.display='none'">
                             <div class="merch-thumb-pattern"></div>
-                            <div class="merch-thumb-overlay"><span>Ver producto</span></div>
+                            <div class="merch-thumb-overlay"><span>Ver foto ⊕</span></div>
                             ${flagNuevo === 'si' ? '<div class="merch-badge">NUEVO</div>' : ''}
                         </div>
                         <div class="merch-info">
@@ -1513,7 +1541,7 @@ document.addEventListener('keydown', function(e) {
                             <p class="merch-name">${nombre}</p>
                             <p class="merch-price"><strong>$${precio} ARS</strong></p>
                         </div>
-                        <button class="merch-add" onclick="pedirPorWA('${nombre}')"><span>+ Agregar al carrito</span></button>
+                        <button class="merch-add" onclick="event.stopPropagation(); agregarAlCarrito('${nomEsc}', '${catEsc2}', ${parseFloat(precio)||0}, '${urlImg}')"><span>+ Agregar al carrito</span></button>
                     </div>`;
             });
         } catch (e) { console.error("Error Tienda:", e); }
@@ -1530,15 +1558,14 @@ document.addEventListener('keydown', function(e) {
             console.log('🎨 Portafolio - filas cargadas:', lineas.length);
 
             lineas.forEach((linea, idx) => {
-                const partes = linea.split(',');
-                if (partes.length < 4) return;
+                const partes = parseCSVLine(linea);
+                if (partes.length < 3) return;
 
-                const categoria = partes[0].trim().replace(/^"|"$/g, '');
-                const artista   = partes[1].trim().replace(/^"|"$/g, '');
-                // col D (índice 3) = link_web
-                const urlRaw = partes.slice(3).join(',').trim().replace(/^"|"$/g, '');
+                const categoria = partes[0];
+                const artista   = partes[1];
+                const urlRaw    = partes[2] || ''; // col C = imagen
                 const urlImg = fixImgUrl(urlRaw);
-                console.log(`🎨 Fila ${idx+1} | link_web: "${urlRaw}" → "${urlImg}"`);
+                console.log(`🎨 Fila ${idx+1} | imagen: "${urlRaw}" → "${urlImg}"`);
 
                 if (!urlImg) return;
 
@@ -1560,7 +1587,7 @@ document.addEventListener('keydown', function(e) {
     }
 
     function pedirPorWA(prod) {
-        const telefono = "5491122334455";
+        const telefono = "5491166000957";
         const mensaje = encodeURIComponent(`Hola Primitivo! Me interesa: ${prod}`);
         window.open(`https://wa.me/${telefono}?text=${mensaje}`, '_blank');
     }
@@ -1571,5 +1598,256 @@ document.addEventListener('keydown', function(e) {
     });
 </script>
 
+<!-- ══════ CARRITO ══════ -->
+
+<!-- Botón flotante -->
+<button id="cart-fab" onclick="toggleCarrito()" style="
+  position:fixed; bottom:2rem; right:2rem; z-index:5000;
+  width:58px; height:58px; border-radius:50%;
+  background:var(--red); border:2px solid var(--red-hot);
+  color:var(--cream); font-size:1.4rem;
+  cursor:pointer; box-shadow:0 4px 20px rgba(192,57,43,.5);
+  transition:transform .2s, box-shadow .2s;
+  display:flex; align-items:center; justify-content:center;
+" onmouseenter="this.style.transform='scale(1.1)'" onmouseleave="this.style.transform='scale(1)'">
+  🛒
+  <span id="cart-count" style="
+    position:absolute; top:-4px; right:-4px;
+    background:var(--yellow); color:var(--noir);
+    font-family:'Bebas Neue',sans-serif; font-size:.65rem;
+    width:20px; height:20px; border-radius:50%;
+    display:none; align-items:center; justify-content:center;
+    font-weight:bold;
+  ">0</span>
+</button>
+
+<!-- Drawer del carrito -->
+<div id="cart-drawer" style="
+  position:fixed; top:0; right:-420px; width:420px; max-width:100vw;
+  height:100vh; background:var(--charcoal);
+  border-left:1px solid rgba(192,57,43,.3);
+  z-index:6000; transition:right .35s cubic-bezier(.16,1,.3,1);
+  display:flex; flex-direction:column;
+  box-shadow:-10px 0 40px rgba(0,0,0,.6);
+">
+  <!-- Header -->
+  <div style="padding:1.5rem 1.5rem 1rem; border-bottom:1px solid var(--ash); display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:5px; font-size:.65rem; color:var(--red-hot);">PRIMITIVO</p>
+      <p style="font-family:'Permanent Marker',cursive; font-size:1.4rem; color:var(--cream); text-shadow:1px 1px 0 var(--red);">Tu Carrito</p>
+    </div>
+    <button onclick="toggleCarrito()" style="background:none;border:none;color:var(--fog);font-size:1.5rem;cursor:pointer;transition:color .2s;" onmouseenter="this.style.color='var(--cream)'" onmouseleave="this.style.color='var(--fog)'">✕</button>
+  </div>
+
+  <!-- Items -->
+  <div id="cart-items" style="flex:1; overflow-y:auto; padding:1rem 1.5rem;">
+    <div id="cart-empty" style="text-align:center; padding:4rem 1rem; color:var(--fog);">
+      <p style="font-size:2.5rem; margin-bottom:1rem;">🛒</p>
+      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:.8rem;">Tu carrito está vacío</p>
+    </div>
+  </div>
+
+  <!-- Footer con total y botón pagar -->
+  <div id="cart-footer" style="display:none; padding:1.5rem; border-top:1px solid var(--ash);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.8rem; color:var(--fog);">TOTAL</p>
+      <p id="cart-total" style="font-family:'Permanent Marker',cursive; font-size:1.4rem; color:var(--cream); text-shadow:1px 1px 0 var(--red);"></p>
+    </div>
+    <button onclick="vaciarCarrito()" style="
+      width:100%; padding:.6rem; margin-bottom:.7rem;
+      background:transparent; color:var(--fog);
+      border:1px solid var(--ash); cursor:pointer;
+      font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.65rem;
+      transition:all .3s;
+    " onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)'" onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--fog)'">
+      Vaciar carrito
+    </button>
+    <button onclick="pagar()" id="btn-pagar" style="
+      width:100%; padding:.9rem;
+      background:var(--red); color:var(--cream);
+      border:2px solid var(--red-hot); cursor:pointer;
+      font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:.85rem;
+      clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+      transition:background .3s, box-shadow .3s;
+    " onmouseenter="this.style.background='var(--red-hot)';this.style.boxShadow='0 0 25px rgba(231,76,60,.5)'" onmouseleave="this.style.background='var(--red)';this.style.boxShadow='none'">
+      Pagar con MercadoPago ✦
+    </button>
+    <p style="text-align:center; font-size:.65rem; color:var(--fog); margin-top:.8rem; font-family:'Bebas Neue',sans-serif; letter-spacing:2px;">PAGO SEGURO · TARJETAS · TRANSFERENCIA</p>
+  </div>
+</div>
+
+<!-- Overlay oscuro detrás del drawer -->
+<div id="cart-overlay" onclick="toggleCarrito()" style="
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.6); z-index:5999;
+  backdrop-filter:blur(2px);
+"></div>
+
+<style>
+  #cart-items::-webkit-scrollbar { width:4px; }
+  #cart-items::-webkit-scrollbar-track { background:var(--smoke); }
+  #cart-items::-webkit-scrollbar-thumb { background:var(--red); border-radius:2px; }
+  .cart-item { display:flex; gap:1rem; padding:1rem 0; border-bottom:1px solid var(--ash); align-items:center; }
+  .cart-item-img { width:64px; height:64px; object-fit:cover; border:1px solid rgba(192,57,43,.2); flex-shrink:0; }
+  .cart-item-info { flex:1; min-width:0; }
+  .cart-item-cat { font-family:'Bebas Neue',sans-serif; font-size:.5rem; letter-spacing:4px; color:var(--red-hot); }
+  .cart-item-name { font-family:'Bebas Neue',sans-serif; font-size:.9rem; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cart-item-price { font-size:.75rem; color:var(--fog); margin-top:.2rem; }
+  .cart-item-qty { display:flex; align-items:center; gap:.5rem; margin-top:.5rem; }
+  .qty-btn { width:24px; height:24px; background:var(--ash); border:none; color:var(--bone); cursor:pointer; font-size:.9rem; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+  .qty-btn:hover { background:var(--red); }
+  .qty-num { font-family:'Bebas Neue',sans-serif; font-size:.9rem; color:var(--cream); min-width:20px; text-align:center; }
+  .cart-item-remove { background:none; border:none; color:var(--fog); cursor:pointer; font-size:1rem; padding:.2rem; transition:color .2s; flex-shrink:0; }
+  .cart-item-remove:hover { color:var(--red-hot); }
+  @media(max-width:480px) { #cart-drawer { width:100vw; right:-100vw; } }
+</style>
+
+<script>
+  let carrito = [];
+
+  function agregarAlCarrito(nombre, categoria, precio, imagen) {
+    const idx = carrito.findIndex(i => i.nombre === nombre);
+    if (idx >= 0) {
+      carrito[idx].cantidad++;
+    } else {
+      carrito.push({ nombre, categoria, precio, imagen, cantidad: 1 });
+    }
+    renderCarrito();
+    const drawer = document.getElementById('cart-drawer');
+    if (drawer.style.right !== '0px') toggleCarrito();
+    const fab = document.getElementById('cart-fab');
+    fab.style.transform = 'scale(1.3)';
+    setTimeout(() => fab.style.transform = 'scale(1)', 200);
+  }
+
+  function cambiarCantidad(nombre, delta) {
+    const idx = carrito.findIndex(i => i.nombre === nombre);
+    if (idx < 0) return;
+    carrito[idx].cantidad += delta;
+    if (carrito[idx].cantidad <= 0) carrito.splice(idx, 1);
+    renderCarrito();
+  }
+
+  function eliminarItem(nombre) {
+    carrito = carrito.filter(i => i.nombre !== nombre);
+    renderCarrito();
+  }
+
+  function vaciarCarrito() {
+    carrito = [];
+    renderCarrito();
+  }
+
+  function renderCarrito() {
+    const itemsEl  = document.getElementById('cart-items');
+    const emptyEl  = document.getElementById('cart-empty');
+    const footerEl = document.getElementById('cart-footer');
+    const countEl  = document.getElementById('cart-count');
+    const totalEl  = document.getElementById('cart-total');
+
+    const totalUnidades = carrito.reduce((s, i) => s + i.cantidad, 0);
+    const totalPrecio   = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+
+    countEl.textContent = totalUnidades;
+    countEl.style.display = totalUnidades > 0 ? 'flex' : 'none';
+
+    if (carrito.length === 0) {
+      itemsEl.innerHTML = '';
+      itemsEl.appendChild(emptyEl);
+      emptyEl.style.display = 'block';
+      footerEl.style.display = 'none';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    footerEl.style.display = 'block';
+    totalEl.textContent = '$' + totalPrecio.toLocaleString('es-AR') + ' ARS';
+
+    itemsEl.innerHTML = '';
+    carrito.forEach(item => {
+      const nomSafe = item.nombre.replace(/'/g, "\\'");
+      const div = document.createElement('div');
+      div.className = 'cart-item';
+      div.innerHTML = `
+        <img src="${item.imagen}" class="cart-item-img" onerror="this.style.display='none'">
+        <div class="cart-item-info">
+          <p class="cart-item-cat">${item.categoria}</p>
+          <p class="cart-item-name">${item.nombre}</p>
+          <p class="cart-item-price">$${(item.precio * item.cantidad).toLocaleString('es-AR')} ARS</p>
+          <div class="cart-item-qty">
+            <button class="qty-btn" onclick="cambiarCantidad('${nomSafe}', -1)">−</button>
+            <span class="qty-num">${item.cantidad}</span>
+            <button class="qty-btn" onclick="cambiarCantidad('${nomSafe}', 1)">+</button>
+          </div>
+        </div>
+        <button class="cart-item-remove" onclick="eliminarItem('${nomSafe}')">✕</button>
+      `;
+      itemsEl.appendChild(div);
+    });
+  }
+
+  function toggleCarrito() {
+    const drawer  = document.getElementById('cart-drawer');
+    const overlay = document.getElementById('cart-overlay');
+    const abierto = drawer.style.right === '0px';
+    drawer.style.right    = abierto ? '-420px' : '0px';
+    overlay.style.display = abierto ? 'none' : 'block';
+    document.body.style.overflow = abierto ? '' : 'hidden';
+  }
+
+  async function pagar() {
+    if (carrito.length === 0) return;
+    const btn = document.getElementById('btn-pagar');
+    btn.textContent = 'Procesando...';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/crear-preferencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: carrito.map(i => ({ nombre: i.nombre, precio: i.precio, cantidad: i.cantidad })) })
+      });
+      const data = await res.json();
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        alert('Error al procesar el pago. Intentá de nuevo.');
+        console.error(data);
+      }
+    } catch(e) {
+      alert('Error de conexión. Intentá de nuevo.');
+      console.error(e);
+    } finally {
+      btn.textContent = 'Pagar con MercadoPago ✦';
+      btn.disabled = false;
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const pago = params.get('pago');
+    if (pago === 'ok') { vaciarCarrito(); alert('✅ ¡Pago exitoso! Gracias por tu compra. Te contactamos pronto.'); }
+    else if (pago === 'error') { alert('❌ El pago no se completó. Podés intentarlo de nuevo.'); }
+    else if (pago === 'pendiente') { alert('⏳ Tu pago está pendiente. Te avisamos cuando se confirme.'); }
+    if (pago) window.history.replaceState({}, '', window.location.pathname);
+  });
+<\/script>
+
+<script>
+  // Hamburger menu
+  const hamburger = document.getElementById('nav-hamburger');
+  const navLinks = document.querySelector('.nav-links');
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('open');
+    navLinks.classList.toggle('open');
+    document.body.style.overflow = navLinks.classList.contains('open') ? 'hidden' : '';
+  });
+  navLinks.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      hamburger.classList.remove('open');
+      navLinks.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  });
+</script>
 </body>
 </html>
