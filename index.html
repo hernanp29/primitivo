@@ -1426,15 +1426,41 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 <script>
-  // Filter buttons interaction
-  document.querySelectorAll('.filter-btn, .cat-pill').forEach(btn => {
-    btn.addEventListener('click', function() {
-      this.closest('.style-filters, .cat-pills')
-        .querySelectorAll('.filter-btn, .cat-pill')
-        .forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
+  // Las cards se cargan async → los filtros se bindean DESPUÉS de que carguen
+
+  function bindFiltrosTienda() {
+    document.querySelectorAll('.cat-pill').forEach(btn => {
+      btn.replaceWith(btn.cloneNode(true)); // elimina listeners viejos
     });
-  });
+    document.querySelectorAll('.cat-pill').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filtro = this.textContent.trim().toLowerCase();
+        document.querySelectorAll('.merch-card').forEach(item => {
+          const cat = (item.dataset.categoria || '').toLowerCase();
+          item.style.display = (filtro === 'todo' || filtro === 'todos' || cat.includes(filtro)) ? '' : 'none';
+        });
+      });
+    });
+  }
+
+  function bindFiltrosPortafolio() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.replaceWith(btn.cloneNode(true));
+    });
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const filtro = this.textContent.trim().toLowerCase();
+        document.querySelectorAll('.port-item').forEach(item => {
+          const cat = (item.dataset.categoria || '').toLowerCase();
+          item.style.display = (filtro === 'todos' || filtro === 'todo' || cat.includes(filtro)) ? '' : 'none';
+        });
+      });
+    });
+  }
 </script>
 
 
@@ -1526,38 +1552,58 @@ document.addEventListener('keydown', function(e) {
         return urlRaw;
     }
 
+    function mostrarDebug(msg, tipo = 'info') {
+        const d = document.getElementById('primitivo-debug');
+        if (!d) return;
+        const color = tipo === 'error' ? '#e74c3c' : tipo === 'ok' ? '#27ae60' : '#f1c40f';
+        d.innerHTML += `<div style="color:${color};margin:2px 0;font-size:11px;">${msg}</div>`;
+        d.style.display = 'block';
+    }
+
     async function cargarTienda() {
+        const contenedor = document.getElementById('contenedor-tienda');
         try {
+            mostrarDebug('🛒 Fetching tienda CSV...');
             const response = await fetch(URLS.tienda);
+            mostrarDebug(`🛒 HTTP status: ${response.status} ${response.ok ? '✅' : '❌'}`, response.ok ? 'ok' : 'error');
             const data = await response.text();
-            const contenedor = document.getElementById('contenedor-tienda');
+            mostrarDebug(`🛒 CSV recibido: ${data.length} chars, primeros 80: ${data.substring(0,80).replace(/\n/g,' ')}`);
             contenedor.innerHTML = '';
 
             const lineas = data.split('\n').filter(l => l.trim() !== '').slice(1);
-            console.log('🛒 Tienda - filas cargadas:', lineas.length);
+            mostrarDebug(`🛒 Filas de datos (sin header): ${lineas.length}`, lineas.length > 0 ? 'ok' : 'error');
+
+            if (lineas.length === 0) {
+                contenedor.innerHTML = '<p style="color:#e74c3c;font-family:monospace;padding:2rem;">⚠️ La hoja "Tienda" no tiene filas de datos. Revisá que la sheet esté publicada como CSV.</p>';
+                return;
+            }
+
+            const placeholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%231F1F1F"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23555" font-size="14" font-family="monospace" dy=".3em"%3ESIN IMAGEN%3C/text%3E%3C/svg%3E';
+            const fragmentos = [];
 
             lineas.forEach((linea, idx) => {
                 const partes = parseCSVLine(linea);
-                if (partes.length < 4) return;
+                mostrarDebug(`🛒 Fila ${idx+1}: ${partes.length} columnas | img="${partes[3] ? partes[3].substring(0,60) : 'vacía'}"`);
+                if (partes.length < 2) return;
 
                 const categoria = partes[0];
                 const nombre    = partes[1];
-                const precio    = partes[2];
-                const urlRaw    = partes[3] || ''; // col D = Imagen_URL
-                const esNuevo   = (partes[4] || '').toLowerCase(); // col E = Es_Nuevo
+                const precio    = partes[2] || '0';
+                const urlRaw    = partes[3] || '';
+                const esNuevo   = (partes[4] || '').toLowerCase();
                 const flagNuevo = esNuevo === 'si' ? 'si' : '';
 
-                const urlImg = fixImgUrl(urlRaw) || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%231F1F1F"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23555" font-size="14" font-family="monospace"%3ESIN IMAGEN%3C/text%3E%3C/svg%3E';
-                console.log(`🛒 Fila ${idx+1} | Imagen_URL: "${urlRaw}" → "${urlImg}"`);
-
-                const nomEsc = nombre.replace(/'/g, "\\'");
+                const urlImg = fixImgUrl(urlRaw) || placeholder;
+                const nomEsc  = nombre.replace(/'/g, "\\'");
                 const catEsc2 = categoria.replace(/'/g, "\\'");
-                contenedor.innerHTML += `
-                    <div class="merch-card" onclick="abrirLightbox('${urlImg}', '${catEsc2}', '${nomEsc}')">
+                const imgEsc  = urlImg.replace(/'/g, "%27");
+
+                fragmentos.push(`
+                    <div class="merch-card" data-categoria="${categoria.toLowerCase()}" onclick="abrirLightbox('${imgEsc}', '${catEsc2}', '${nomEsc}')">
                         <div class="merch-thumb">
                             <img src="${urlImg}" alt="${nombre}"
                                  style="width:100%;height:100%;object-fit:cover;position:absolute;"
-                                 onerror="console.error('❌ Imagen no cargó:', '${urlImg}'); this.style.display='none'">
+                                 onerror="this.src='${placeholder}'">
                             <div class="merch-thumb-pattern"></div>
                             <div class="merch-thumb-overlay"><span>Ver foto ⊕</span></div>
                             ${flagNuevo === 'si' ? '<div class="merch-badge">NUEVO</div>' : ''}
@@ -1567,39 +1613,54 @@ document.addEventListener('keydown', function(e) {
                             <p class="merch-name">${nombre}</p>
                             <p class="merch-price"><strong>$${precio} ARS</strong></p>
                         </div>
-                        <button class="merch-add" onclick="event.stopPropagation(); agregarAlCarrito('${nomEsc}', '${catEsc2}', ${parseFloat(precio)||0}, '${urlImg}')"><span>+ Agregar al carrito</span></button>
-                    </div>`;
+                        <button class="merch-add" onclick="event.stopPropagation(); agregarAlCarrito('${nomEsc}', '${catEsc2}', ${parseFloat(precio)||0}, '${imgEsc}')"><span>+ Agregar al carrito</span></button>
+                    </div>`);
             });
-        } catch (e) { console.error("Error Tienda:", e); }
+            contenedor.innerHTML = fragmentos.join('');
+            bindFiltrosTienda();
+        } catch (e) {
+            mostrarDebug(`❌ Error Tienda: ${e.message}`, 'error');
+            console.error("Error Tienda:", e);
+            if (contenedor) contenedor.innerHTML = `<p style="color:#e74c3c;font-family:monospace;padding:2rem;">Error al cargar productos: ${e.message}</p>`;
+        }
     }
 
     async function cargarPortafolio() {
+        const contenedor = document.getElementById('grid-portafolio-dinamico');
         try {
+            mostrarDebug('🎨 Fetching portafolio CSV...');
             const response = await fetch(URLS.portafolio);
+            mostrarDebug(`🎨 HTTP status: ${response.status} ${response.ok ? '✅' : '❌'}`, response.ok ? 'ok' : 'error');
             const data = await response.text();
-            const contenedor = document.getElementById('grid-portafolio-dinamico');
             contenedor.innerHTML = '';
 
             const lineas = data.split('\n').filter(l => l.trim() !== '').slice(1);
-            console.log('🎨 Portafolio - filas cargadas:', lineas.length);
+            mostrarDebug(`🎨 Filas portafolio: ${lineas.length}`, lineas.length > 0 ? 'ok' : 'error');
 
+            if (lineas.length === 0) {
+                contenedor.innerHTML = '<p style="color:#e74c3c;font-family:monospace;padding:2rem;column-span:all;">⚠️ La hoja "Portafolio" no tiene filas de datos.</p>';
+                return;
+            }
+
+            const fragmentos = [];
             lineas.forEach((linea, idx) => {
                 const partes = parseCSVLine(linea);
-                if (partes.length < 3) return;
+                if (partes.length < 2) return;
 
                 const categoria = partes[0];
                 const artista   = partes[1];
-                const urlRaw    = partes[2] || ''; // col C = imagen
-                const urlImg = fixImgUrl(urlRaw);
-                console.log(`🎨 Fila ${idx+1} | imagen: "${urlRaw}" → "${urlImg}"`);
+                const urlRaw    = partes[2] || '';
+                const urlImg    = fixImgUrl(urlRaw);
+                mostrarDebug(`🎨 Fila ${idx+1}: img="${urlRaw ? urlRaw.substring(0,60) : 'vacía'}" → ok=${!!urlImg}`);
 
                 if (!urlImg) return;
 
                 const catEsc = categoria.replace(/'/g, "\\'");
                 const artEsc = artista.replace(/'/g, "\\'");
+                const imgEsc = urlImg.replace(/'/g, "%27");
 
-                contenedor.innerHTML += `
-                    <div class="port-item" onclick="abrirLightbox('${urlImg}', '${catEsc}', '${artEsc}')">
+                fragmentos.push(`
+                    <div class="port-item" data-categoria="${categoria.toLowerCase()}" onclick="abrirLightbox('${imgEsc}', '${catEsc}', '${artEsc}')">
                         <div class="port-bg" style="background-image: url('${urlImg}');"></div>
                         <div class="port-overlay"></div>
                         <div class="port-zoom">⊕</div>
@@ -1607,9 +1668,14 @@ document.addEventListener('keydown', function(e) {
                             <p class="port-style">${categoria}</p>
                             <p class="port-artist">Por: ${artista}</p>
                         </div>
-                    </div>`;
+                    </div>`);
             });
-        } catch (e) { console.error("Error Portafolio:", e); }
+            contenedor.innerHTML = fragmentos.join('');
+            bindFiltrosPortafolio();
+        } catch (e) {
+            mostrarDebug(`❌ Error Portafolio: ${e.message}`, 'error');
+            console.error("Error Portafolio:", e);
+        }
     }
 
     function pedirPorWA(prod) {
@@ -2122,6 +2188,13 @@ document.addEventListener('keydown', function(e) {
   </div>
 </div>
 
+<!-- ═══ PANEL DEBUG ═══ -->
+<div id="primitivo-debug" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:220px;overflow-y:auto;background:rgba(0,0,0,.92);border-top:2px solid #e74c3c;padding:8px 12px;z-index:99999;font-family:monospace;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+    <strong style="color:#f1c40f;font-size:11px;">🔧 DEBUG</strong>
+    <button onclick="document.getElementById('primitivo-debug').style.display='none'" style="background:none;border:1px solid #555;color:#aaa;font-size:10px;cursor:pointer;padding:2px 6px;">✕</button>
+  </div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
