@@ -6,6 +6,7 @@
   <title>PRIMITIVO — Tattoo & Piercing</title>
   <link rel="icon" href="logo.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Bebas+Neue&family=Special+Elite&family=Caveat:wght@700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <style>
     :root {
       --red:      #C0392B;
@@ -1329,7 +1330,7 @@
 "\n📍 *Zona del cuerpo:* " + (zona || "—") +
 "\n\n💬 *Idea / Descripción:*\n" + idea;
 
-        const numero = "5491166000957";
+        const numero = CONFIG.whatsappNumber;
         const url = "https://wa.me/" + numero + "?text=" + encodeURIComponent(msg);
         window.open(url, "_blank");
       }
@@ -1347,11 +1348,8 @@
       <p class="footer-logo">Primitivo</p>
       <p class="footer-logo-sub">Tattoo &amp; Piercing Studio</p>
       <p class="footer-desc">Arte permanente y cultura rock desde Buenos Aires. Hacemos lo que amamos con la honestidad de quienes no tienen nada que perder y todo que demostrar.</p>
-      <div class="footer-socials">
-        <a href="https://www.instagram.com/primitivotattoorock" class="footer-soc">IG</a>
-        <a href="https://www.facebook.com/primitivotattoorock" class="footer-soc">FB</a>
-        <a href="https://www.tiktok.com/@primitivorocktattoo?_t=ZM-8ugVvfEcR5K&_r=1" class="footer-soc">TK</a>
-        <a href="https://wa.link/tweags" class="footer-soc">WA</a>
+      <div class="footer-socials" id="footer-socials">
+        <!-- Los links se inyectan dinámicamente desde CONFIG en el JS -->
       </div>
     </div>
     <div class="footer-col">
@@ -1442,10 +1440,34 @@ document.addEventListener('keydown', function(e) {
 
 
 <script>
-    const URLS = {
-        tienda:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3B1Y6G0ogyenX4ehIDaQhhHaGBRlRfa4kl9w6_0aXpv-TcMr_UFsaOStRcg_8iwujDGbKn7bpmoi/pub?gid=0&single=true&output=csv',
-        portafolio: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3B1Y6G0ogyenX4ehIDaQhhHaGBRlRfa4kl9w6_0aXpv-TcMr_UFsaOStRcg_8iwujDGbKn7bpmoi/pub?gid=631754337&single=true&output=csv'
+    // ════════════════════════════════════════════════════════════
+    //  CONFIG — Todos los valores editables están acá.
+    //  En producción (Vercel) estas variables las inyecta el
+    //  build o un endpoint propio. Para desarrollo local,
+    //  simplemente editá este objeto.
+    // ════════════════════════════════════════════════════════════
+    const CONFIG = {
+      // WhatsApp — número en formato internacional sin + ni espacios
+      whatsappNumber: "5491166000957",
+
+      // Redes sociales
+      instagram: "https://www.instagram.com/primitivotattoorock",
+      facebook:  "https://www.facebook.com/primitivotattoorock",
+      tiktok:    "https://www.tiktok.com/@primitivorocktattoo?_t=ZM-8ugVvfEcR5K&_r=1",
+      whatsappLink: "https://wa.link/tweags",
+
+      // Google Sheets — publicar como CSV en Archivo → Publicar en la web
+      sheets: {
+        tienda:     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3B1Y6G0ogyenX4ehIDaQhhHaGBRlRfa4kl9w6_0aXpv-TcMr_UFsaOStRcg_8iwujDGbKn7bpmoi/pub?gid=0&single=true&output=csv",
+        portafolio: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3B1Y6G0ogyenX4ehIDaQhhHaGBRlRfa4kl9w6_0aXpv-TcMr_UFsaOStRcg_8iwujDGbKn7bpmoi/pub?gid=631754337&single=true&output=csv"
+      },
+
+      // AppSheet — encontralo en Manage → Integrations de tu app
+      appsheetAppId: "primitivo-145461927"
     };
+
+    // Alias para compatibilidad con el código existente
+    const URLS = CONFIG.sheets;
 
 
 
@@ -1481,7 +1503,7 @@ document.addEventListener('keydown', function(e) {
 
         // 2. Ruta de AppSheet (Tienda_Images/ o Portafolio_Images/ etc)
         if (urlRaw.includes("_Images/")) {
-            const appId = "primitivo-145461927";
+            const appId = CONFIG.appsheetAppId;
             // Detectar tabla según prefijo
             let tabla = "Portafolio";
             if (urlRaw.toLowerCase().includes("tienda")) tabla = "Tienda";
@@ -1587,7 +1609,7 @@ document.addEventListener('keydown', function(e) {
     }
 
     function pedirPorWA(prod) {
-        const telefono = "5491166000957";
+        const telefono = CONFIG.whatsappNumber;
         const mensaje = encodeURIComponent(`Hola Primitivo! Me interesa: ${prod}`);
         window.open(`https://wa.me/${telefono}?text=${mensaje}`, '_blank');
     }
@@ -1662,7 +1684,7 @@ document.addEventListener('keydown', function(e) {
     " onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)'" onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--fog)'">
       Vaciar carrito
     </button>
-    <button onclick="pagar()" id="btn-pagar" style="
+    <button onclick="abrirModalRetiro()" id="btn-pagar" style="
       width:100%; padding:.9rem;
       background:var(--red); color:var(--cream);
       border:2px solid var(--red-hot); cursor:pointer;
@@ -1798,38 +1820,43 @@ document.addEventListener('keydown', function(e) {
   }
 
   async function pagar() {
-    if (carrito.length === 0) return;
-    const btn = document.getElementById('btn-pagar');
-    btn.textContent = 'Procesando...';
-    btn.disabled = true;
-    try {
-      const res = await fetch('/api/crear-preferencia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: carrito.map(i => ({ nombre: i.nombre, precio: i.precio, cantidad: i.cantidad })) })
-      });
-      const data = await res.json();
-      if (data.init_point) {
-        window.location.href = data.init_point;
-      } else {
-        alert('Error al procesar el pago. Intentá de nuevo.');
-        console.error(data);
-      }
-    } catch(e) {
-      alert('Error de conexión. Intentá de nuevo.');
-      console.error(e);
-    } finally {
-      btn.textContent = 'Pagar con MercadoPago ✦';
-      btn.disabled = false;
-    }
+    // La lógica de pago ahora pasa por el modal de retiro (abrirModalRetiro → confirmarPago)
+    abrirModalRetiro();
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    const pago = params.get('pago');
-    if (pago === 'ok') { vaciarCarrito(); alert('✅ ¡Pago exitoso! Gracias por tu compra. Te contactamos pronto.'); }
-    else if (pago === 'error') { alert('❌ El pago no se completó. Podés intentarlo de nuevo.'); }
-    else if (pago === 'pendiente') { alert('⏳ Tu pago está pendiente. Te avisamos cuando se confirme.'); }
+    const params    = new URLSearchParams(window.location.search);
+    const pago      = params.get('pago');
+    const paymentId = params.get('payment_id') || params.get('collection_id') || '';
+
+    if (pago === 'ok') {
+      const carritoGuardado = JSON.parse(sessionStorage.getItem('carritoGuardado') || '[]');
+      sessionStorage.removeItem('carritoGuardado');
+      vaciarCarrito();
+
+      // Generar código único de retiro: PRIM-YYYYMMDD-XXXX
+      const ahora  = new Date();
+      const fecha  = ahora.toISOString().slice(0,10).replace(/-/g,'');
+      const rand   = Math.random().toString(36).substring(2,6).toUpperCase();
+      const codigo = `PRIM-${fecha}-${rand}`;
+
+      // Guardar en Google Sheets (no bloquea la UI si falla)
+      fetch('/api/guardar-pedido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codigo,
+          fecha:    ahora.toISOString(),
+          items:    carritoGuardado.map(i => ({ nombre: i.nombre, cantidad: i.cantidad, precio: i.precio })),
+          total:    carritoGuardado.reduce((s,i) => s + i.precio * i.cantidad, 0),
+          paymentId
+        })
+      }).catch(err => console.warn('No se pudo guardar el pedido en Sheets:', err));
+
+      abrirModalPagoOk(carritoGuardado, codigo, ahora, paymentId);
+    }
+    else if (pago === 'error')    { alert('❌ El pago no se completó. Podés intentarlo de nuevo.'); }
+    else if (pago === 'pendiente'){ alert('⏳ Tu pago está pendiente. Te avisamos cuando se confirme.'); }
     if (pago) window.history.replaceState({}, '', window.location.pathname);
   });
 </script>
@@ -1850,6 +1877,418 @@ document.addEventListener('keydown', function(e) {
       document.body.style.overflow = '';
     });
   });
+</script>
+<!-- ═══════════════════════════════════════════════════════
+     MODAL — Aviso retiro en local (antes de pagar)
+════════════════════════════════════════════════════════ -->
+<div id="modal-retiro" style="
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:rgba(0,0,0,.85); backdrop-filter:blur(6px);
+  align-items:center; justify-content:center; padding:1.5rem;
+">
+  <div style="
+    background:var(--charcoal);
+    border:1px solid rgba(192,57,43,.4);
+    max-width:480px; width:100%;
+    padding:2.5rem 2rem;
+    position:relative;
+    box-shadow: 0 0 60px rgba(192,57,43,.2), inset 0 0 0 1px rgba(255,255,255,.03);
+  ">
+    <!-- Barra roja top -->
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);box-shadow:0 0 20px var(--red);"></div>
+
+    <!-- Ícono -->
+    <div style="text-align:center; font-size:3rem; margin-bottom:1rem;">🏪</div>
+
+    <!-- Título -->
+    <h2 style="
+      font-family:'Permanent Marker',cursive;
+      font-size:1.7rem; color:var(--cream);
+      text-shadow:2px 2px 0 var(--red);
+      text-align:center; margin-bottom:.8rem; line-height:1.1;
+    ">Solo retiro en local</h2>
+
+    <!-- Aviso principal -->
+    <div style="
+      background:rgba(192,57,43,.12);
+      border:1px solid rgba(192,57,43,.35);
+      border-left:4px solid var(--red);
+      padding:1rem 1.2rem; margin-bottom:1.5rem;
+    ">
+      <p style="
+        font-family:'Bebas Neue',sans-serif;
+        letter-spacing:2px; font-size:.75rem;
+        color:var(--red-hot); margin-bottom:.4rem;
+      ">⚠ IMPORTANTE</p>
+      <p style="font-size:.85rem; line-height:1.7; color:var(--bone);">
+        <strong>No realizamos envíos.</strong> Una vez que completes el pago
+        vas a recibir un <strong>QR o email de confirmación</strong> que tenés
+        que presentar en el local para retirar tu pedido.
+      </p>
+    </div>
+
+    <!-- Pasos -->
+    <div style="margin-bottom:2rem;">
+      <p style="
+        font-family:'Bebas Neue',sans-serif;
+        letter-spacing:3px; font-size:.65rem;
+        color:var(--fog); margin-bottom:.8rem;
+      ">¿CÓMO FUNCIONA?</p>
+      <div style="display:flex; flex-direction:column; gap:.6rem;">
+        <div style="display:flex; align-items:flex-start; gap:.8rem;">
+          <span style="
+            font-family:'Bebas Neue',sans-serif;
+            background:var(--red); color:var(--cream);
+            width:22px; height:22px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:.75rem; flex-shrink:0; margin-top:.1rem;
+          ">1</span>
+          <p style="font-size:.82rem; line-height:1.6; color:rgba(212,201,176,.75);">Completás el pago en MercadoPago</p>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:.8rem;">
+          <span style="
+            font-family:'Bebas Neue',sans-serif;
+            background:var(--red); color:var(--cream);
+            width:22px; height:22px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:.75rem; flex-shrink:0; margin-top:.1rem;
+          ">2</span>
+          <p style="font-size:.82rem; line-height:1.6; color:rgba(212,201,176,.75);">Recibís un <strong style="color:var(--cream)">QR o email</strong> de confirmación</p>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:.8rem;">
+          <span style="
+            font-family:'Bebas Neue',sans-serif;
+            background:var(--red); color:var(--cream);
+            width:22px; height:22px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:.75rem; flex-shrink:0; margin-top:.1rem;
+          ">3</span>
+          <p style="font-size:.82rem; line-height:1.6; color:rgba(212,201,176,.75);">Venís al local y mostrás el comprobante para retirar</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div style="display:flex; gap:.8rem; flex-direction:column;">
+      <button onclick="confirmarPago()" style="
+        width:100%; padding:1rem;
+        background:var(--red); color:var(--cream);
+        border:2px solid var(--red-hot); cursor:pointer;
+        font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:.85rem;
+        clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+        transition:background .3s, box-shadow .3s;
+      "
+      onmouseenter="this.style.background='var(--red-hot)';this.style.boxShadow='0 0 25px rgba(231,76,60,.5)'"
+      onmouseleave="this.style.background='var(--red)';this.style.boxShadow='none'"
+      >
+        Entendido — Ir a pagar ✦
+      </button>
+      <button onclick="cerrarModalRetiro()" style="
+        width:100%; padding:.7rem;
+        background:transparent; color:var(--fog);
+        border:1px solid var(--ash); cursor:pointer;
+        font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.7rem;
+        transition:all .3s;
+      "
+      onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)'"
+      onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--fog)'"
+      >
+        Volver al carrito
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL — Pago exitoso + QR de retiro
+════════════════════════════════════════════════════════ -->
+<div id="modal-pago-ok" style="
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:rgba(0,0,0,.88); backdrop-filter:blur(8px);
+  align-items:flex-start; justify-content:center;
+  padding:1.5rem; overflow-y:auto;
+">
+  <div style="
+    background:var(--charcoal);
+    border:1px solid rgba(34,139,34,.35);
+    max-width:500px; width:100%;
+    padding:0;
+    position:relative;
+    box-shadow: 0 0 80px rgba(34,139,34,.18), inset 0 0 0 1px rgba(255,255,255,.03);
+    margin:auto;
+  ">
+    <!-- Barra verde top -->
+    <div style="height:4px;background:linear-gradient(to right,#27ae60,#2ecc71);box-shadow:0 0 20px #27ae60;"></div>
+
+    <!-- Header -->
+    <div style="padding:2rem 2rem 1.2rem; text-align:center; border-bottom:1px solid var(--ash);">
+      <div style="font-size:3rem; margin-bottom:.6rem;">✅</div>
+      <h2 style="
+        font-family:'Permanent Marker',cursive;
+        font-size:1.8rem; color:var(--cream);
+        text-shadow:2px 2px 0 #27ae60; line-height:1.1; margin-bottom:.4rem;
+      ">¡Pago exitoso!</h2>
+      <p style="font-size:.8rem; color:rgba(212,201,176,.55); font-family:'Bebas Neue',sans-serif; letter-spacing:3px;">
+        GUARDÁ ESTE QR — LO VAS A NECESITAR PARA RETIRAR
+      </p>
+    </div>
+
+    <!-- Código de retiro -->
+    <div style="padding:1.2rem 2rem 0; text-align:center;">
+      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.65rem; color:var(--fog); margin-bottom:.4rem;">CÓDIGO DE RETIRO</p>
+      <p id="qr-codigo" style="
+        font-family:'Permanent Marker',cursive;
+        font-size:1.5rem; color:var(--yellow);
+        text-shadow:1px 1px 0 rgba(0,0,0,.5);
+        letter-spacing:2px;
+      ">—</p>
+    </div>
+
+    <!-- QR -->
+    <div style="padding:1.2rem 2rem; text-align:center;">
+      <div style="
+        display:inline-block;
+        background:#fff;
+        padding:12px;
+        border:3px solid var(--red);
+        box-shadow:0 0 30px rgba(192,57,43,.3);
+      ">
+        <div id="qr-canvas" style="line-height:0;"></div>
+      </div>
+      <p style="font-size:.72rem; color:var(--fog); margin-top:.7rem; font-family:'Bebas Neue',sans-serif; letter-spacing:2px;">
+        MOSTRÁ ESTE QR EN EL LOCAL PARA RETIRAR TU PEDIDO
+      </p>
+    </div>
+
+    <!-- Detalle de la orden -->
+    <div style="padding:0 2rem 1.2rem;">
+      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.65rem; color:var(--fog); margin-bottom:.7rem;">DETALLE DE TU COMPRA</p>
+      <div id="qr-items" style="
+        background:var(--smoke);
+        border:1px solid var(--ash);
+        padding:.8rem 1rem;
+        max-height:140px; overflow-y:auto;
+      "></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.7rem; padding-top:.7rem; border-top:1px solid var(--ash);">
+        <span style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.7rem; color:var(--fog);">FECHA</span>
+        <span id="qr-fecha" style="font-family:'Bebas Neue',sans-serif; font-size:.8rem; color:var(--bone);"></span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.4rem;">
+        <span style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.7rem; color:var(--fog);">TOTAL</span>
+        <span id="qr-total" style="font-family:'Permanent Marker',cursive; font-size:1.1rem; color:var(--cream); text-shadow:1px 1px 0 var(--red);"></span>
+      </div>
+    </div>
+
+    <!-- Aviso retiro -->
+    <div style="margin:0 2rem 1.5rem; background:rgba(39,174,96,.08); border:1px solid rgba(39,174,96,.25); border-left:3px solid #27ae60; padding:.8rem 1rem;">
+      <p style="font-size:.78rem; line-height:1.6; color:var(--bone);">
+        📍 <strong>Retiro solo en local.</strong> No realizamos envíos.<br>
+        Presentá este QR o el código <span id="qr-codigo-inline" style="color:var(--yellow); font-family:'Permanent Marker',cursive;"></span> al momento de retirar.
+      </p>
+    </div>
+
+    <!-- Botones -->
+    <div style="padding:0 2rem 2rem; display:flex; flex-direction:column; gap:.7rem;">
+      <button onclick="descargarQR()" style="
+        width:100%; padding:.9rem;
+        background:var(--red); color:var(--cream);
+        border:2px solid var(--red-hot); cursor:pointer;
+        font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:.82rem;
+        clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+        transition:background .3s, box-shadow .3s;
+      "
+      onmouseenter="this.style.background='var(--red-hot)';this.style.boxShadow='0 0 25px rgba(231,76,60,.5)'"
+      onmouseleave="this.style.background='var(--red)';this.style.boxShadow='none'"
+      >
+        ⬇ Descargar QR como imagen
+      </button>
+      <button onclick="cerrarModalPagoOk()" style="
+        width:100%; padding:.7rem;
+        background:transparent; color:var(--fog);
+        border:1px solid var(--ash); cursor:pointer;
+        font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.7rem;
+        transition:all .3s;
+      "
+      onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)'"
+      onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--fog)'"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+  // ── Modales de retiro y pago ──────────────────────────────
+
+  function abrirModalRetiro() {
+    if (carrito.length === 0) return;
+    const m = document.getElementById('modal-retiro');
+    m.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function cerrarModalRetiro() {
+    document.getElementById('modal-retiro').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  async function confirmarPago() {
+    cerrarModalRetiro();
+    // Llamar la función real de pago
+    const btn = document.getElementById('btn-pagar');
+    btn.textContent = 'Procesando...';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/crear-preferencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: carrito.map(i => ({ nombre: i.nombre, precio: i.precio, cantidad: i.cantidad })) })
+      });
+      const data = await res.json();
+      if (data.init_point) {
+        // Guardar carrito en sessionStorage antes de ir a MercadoPago
+        sessionStorage.setItem('carritoGuardado', JSON.stringify(carrito));
+        window.location.href = data.init_point;
+      } else {
+        alert('Error al procesar el pago. Intentá de nuevo.');
+        console.error(data);
+      }
+    } catch(e) {
+      alert('Error de conexión. Intentá de nuevo.');
+      console.error(e);
+    } finally {
+      btn.textContent = 'Pagar con MercadoPago ✦';
+      btn.disabled = false;
+    }
+  }
+
+  function cerrarModalPagoOk() {
+    document.getElementById('modal-pago-ok').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function abrirModalPagoOk(items, codigo, fecha, paymentId) {
+    // Llenar código
+    document.getElementById('qr-codigo').textContent = codigo;
+    document.getElementById('qr-codigo-inline').textContent = codigo;
+
+    // Fecha formateada
+    document.getElementById('qr-fecha').textContent = fecha.toLocaleString('es-AR', {
+      day:'2-digit', month:'2-digit', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    });
+
+    // Items del carrito
+    const itemsEl = document.getElementById('qr-items');
+    itemsEl.innerHTML = '';
+    let total = 0;
+    items.forEach(i => {
+      total += i.precio * i.cantidad;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--ash);';
+      row.innerHTML = `
+        <span style="font-size:.78rem;color:var(--bone);font-family:'Special Elite',serif;">${i.cantidad}× ${i.nombre}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:.8rem;color:var(--cream);">$${(i.precio*i.cantidad).toLocaleString('es-AR')}</span>
+      `;
+      itemsEl.appendChild(row);
+    });
+    document.getElementById('qr-total').textContent = '$' + total.toLocaleString('es-AR') + ' ARS';
+
+    // El QR apunta a la URL de verificación del local
+    const siteUrl = window.location.origin;
+    const qrData  = `${siteUrl}/api/verificar?codigo=${encodeURIComponent(codigo)}`;
+
+    // Generar QR usando qrcodejs (cargado vía CDN)
+    const canvas = document.getElementById('qr-canvas');
+    canvas.innerHTML = '';
+    // qrcodejs crea un <img> dentro del contenedor
+    new QRCode(canvas, {
+      text:         qrData,
+      width:        220,
+      height:       220,
+      colorDark:    '#000000',
+      colorLight:   '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    // Mostrar modal
+    const m = document.getElementById('modal-pago-ok');
+    m.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function descargarQR() {
+    const codigo    = document.getElementById('qr-codigo').textContent;
+    const contenedor = document.getElementById('qr-canvas');
+
+    // qrcodejs genera un <img> dentro del contenedor
+    const img = contenedor.querySelector('img');
+    if (!img) { alert('El QR todavía se está generando, intentá en un segundo.'); return; }
+
+    const qrImg  = new Image();
+    qrImg.crossOrigin = 'anonymous';
+    qrImg.onload = function() {
+      const margin = 24;
+      const txtH   = 60;
+      const final  = document.createElement('canvas');
+      final.width  = qrImg.width  + margin * 2;
+      final.height = qrImg.height + margin * 2 + txtH;
+      const ctx    = final.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, final.width, final.height);
+
+      ctx.drawImage(qrImg, margin, margin);
+
+      ctx.fillStyle = '#111111';
+      ctx.font      = 'bold 13px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('PRIMITIVO — Tattoo & Piercing', final.width / 2, qrImg.height + margin + 18);
+      ctx.font      = '12px monospace';
+      ctx.fillText('Código de retiro: ' + codigo, final.width / 2, qrImg.height + margin + 36);
+      ctx.fillStyle = '#888888';
+      ctx.font      = '10px monospace';
+      ctx.fillText('Presentá este QR en el local · No se hacen envíos', final.width / 2, qrImg.height + margin + 52);
+
+      const link    = document.createElement('a');
+      link.download = 'retiro-' + codigo + '.png';
+      link.href     = final.toDataURL('image/png');
+      link.click();
+    };
+    qrImg.src = img.src;
+  }
+
+  // Cerrar modales al hacer click fuera
+  document.getElementById('modal-retiro').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalRetiro();
+  });
+  document.getElementById('modal-pago-ok').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalPagoOk();
+  });
+</script>
+<script>
+  (function() {
+    const socials = document.getElementById('footer-socials');
+    if (!socials) return;
+    const links = [
+      { href: CONFIG.instagram,    label: 'IG' },
+      { href: CONFIG.facebook,     label: 'FB' },
+      { href: CONFIG.tiktok,       label: 'TK' },
+      { href: CONFIG.whatsappLink, label: 'WA' }
+    ];
+    links.forEach(({ href, label }) => {
+      const a = document.createElement('a');
+      a.href = href;
+      a.className = 'footer-soc';
+      a.textContent = label;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      socials.appendChild(a);
+    });
+  })();
 </script>
 </body>
 </html>
