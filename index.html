@@ -1705,20 +1705,24 @@ document.addEventListener('keydown', function(e) {
 <script>
   let carrito = [];
 
-  function agregarAlCarrito(nombre, categoria, precio, imagen) {
-    const idx = carrito.findIndex(i => i.nombre === nombre);
-    if (idx >= 0) {
-      carrito[idx].cantidad++;
-    } else {
-      carrito.push({ nombre, categoria, precio, imagen, cantidad: 1 });
+  // Asegúrate de que tu función reciba el parámetro 'id'
+function agregarAlCarrito(id) {
+    // 1. Convertimos el ID a número (por seguridad)
+    const idProducto = parseInt(id);
+
+    // 2. Buscamos el producto en tu lista de productos (ejemplo: 'productos')
+    const productoEncontrado = productos.find(p => p.id === idProducto);
+
+    if (productoEncontrado) {
+        // Tu lógica actual para añadir al array del carrito
+        carrito.push(productoEncontrado);
+        
+        // Opcional: Guardar en LocalStorage y actualizar la interfaz
+        actualizarContadorCarrito();
+        renderizarCarrito();
+        console.log(`Producto ${idProducto} añadido con éxito.`);
     }
-    renderCarrito();
-    const drawer = document.getElementById('cart-drawer');
-    if (drawer.style.right !== '0px') toggleCarrito();
-    const fab = document.getElementById('cart-fab');
-    fab.style.transform = 'scale(1.3)';
-    setTimeout(() => fab.style.transform = 'scale(1)', 200);
-  }
+}
 
   function cambiarCantidad(nombre, delta) {
     const idx = carrito.findIndex(i => i.nombre === nombre);
