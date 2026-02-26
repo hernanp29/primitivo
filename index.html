@@ -1458,8 +1458,8 @@ document.addEventListener('keydown', function(e) {
 
       // Google Sheets — publicar como CSV en Archivo → Publicar en la web
       sheets: {
-        tienda:     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3B1Y6G0ogyenX4ehIDaQhhHaGBRlRfa4kl9w6_0aXpv-TcMr_UFsaOStRcg_8iwujDGbKn7bpmoi/pub?gid=0&single=true&output=csv",
-        portafolio: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3B1Y6G0ogyenX4ehIDaQhhHaGBRlRfa4kl9w6_0aXpv-TcMr_UFsaOStRcg_8iwujDGbKn7bpmoi/pub?gid=631754337&single=true&output=csv"
+        tienda:     "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVWGubC_5FjJvwp_hDuRqG0ey8hWzxYuVt1Okuc03oJwQzhrJQhDrBWaHV6TvBDn4V2ssnO2h7a9SW/pub?gid=0&single=true&output=csv",
+        portafolio: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVWGubC_5FjJvwp_hDuRqG0ey8hWzxYuVt1Okuc03oJwQzhrJQhDrBWaHV6TvBDn4V2ssnO2h7a9SW/pub?gid=992939377&single=true&output=csv"
       },
 
       // AppSheet — encontralo en Manage → Integrations de tu app
@@ -1514,7 +1514,13 @@ document.addEventListener('keydown', function(e) {
         // 3. Link de Google Drive con ID
         if (urlRaw.includes("id=")) {
             const id = urlRaw.split("id=")[1].split("&")[0];
-            return `https://lh3.googleusercontent.com/d/${id}`;
+            return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
+        }
+
+        // 4. Link directo de Google Drive tipo /file/d/{ID}/view
+        const driveMatch = urlRaw.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+        if (driveMatch) {
+            return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w800`;
         }
 
         return urlRaw;
@@ -1541,10 +1547,8 @@ document.addEventListener('keydown', function(e) {
                 const esNuevo   = (partes[4] || '').toLowerCase(); // col E = Es_Nuevo
                 const flagNuevo = esNuevo === 'si' ? 'si' : '';
 
-                const urlImg = fixImgUrl(urlRaw);
+                const urlImg = fixImgUrl(urlRaw) || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%231F1F1F"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23555" font-size="14" font-family="monospace"%3ESIN IMAGEN%3C/text%3E%3C/svg%3E';
                 console.log(`🛒 Fila ${idx+1} | Imagen_URL: "${urlRaw}" → "${urlImg}"`);
-
-                if (!urlImg) return;
 
                 const nomEsc = nombre.replace(/'/g, "\\'");
                 const catEsc2 = categoria.replace(/'/g, "\\'");
