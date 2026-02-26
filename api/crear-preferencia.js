@@ -11,9 +11,9 @@ export default async function handler(req, res) {
       currency_id: "ARS"
     })),
     back_urls: {
-      success: "https://https://primitivo-ten.vercel.app//?pago=ok",
-      failure: "https://https://primitivo-ten.vercel.app//?pago=error",
-      pending: "https://https://primitivo-ten.vercel.app//?pago=pendiente"
+      success: "https://primitivorock.vercel.app///?pago=ok",
+      failure: "https://primitivorock.vercel.app///?pago=error",
+      pending: "https://primitivorock.vercel.app//?pago=pendiente"
     },
     auto_return: "approved"
   };
