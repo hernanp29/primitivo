@@ -1707,20 +1707,21 @@ document.addEventListener('keydown', function(e) {
 
   // Asegúrate de que tu función reciba el parámetro 'id'
 function agregarAlCarrito(id) {
-    // 1. Convertimos el ID a número (por seguridad)
+    // 1. Convertimos el ID a número (si tus IDs en el JS son números)
     const idProducto = parseInt(id);
 
-    // 2. Buscamos el producto en tu lista de productos (ejemplo: 'productos')
-    const productoEncontrado = productos.find(p => p.id === idProducto);
+    // 2. Buscamos el producto en tu array de productos (ejemplo: 'listaProductos')
+    const productoEncontrado = listaProductos.find(p => p.id === idProducto);
 
     if (productoEncontrado) {
-        // Tu lógica actual para añadir al array del carrito
+        // 3. Tu lógica actual: push al carrito, actualizar contador, etc.
         carrito.push(productoEncontrado);
         
-        // Opcional: Guardar en LocalStorage y actualizar la interfaz
-        actualizarContadorCarrito();
-        renderizarCarrito();
-        console.log(`Producto ${idProducto} añadido con éxito.`);
+        // Ejemplo de refrescar la interfaz
+        actualizarInterfazCarrito();
+        console.log(`Producto con ID ${idProducto} añadido.`);
+    } else {
+        console.warn("No se encontró el producto con ID:", idProducto);
     }
 }
 
