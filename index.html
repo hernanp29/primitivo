@@ -1745,6 +1745,9 @@ document.addEventListener('keydown', function(e) {
     const countEl  = document.getElementById('cart-count');
     const totalEl  = document.getElementById('cart-total');
 
+    // Si el DOM del carrito todavía no existe, salir
+    if (!countEl || !itemsEl || !footerEl || !totalEl) return;
+
     const totalUnidades = carrito.reduce((s, i) => s + i.cantidad, 0);
     const totalPrecio   = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
 
@@ -1752,14 +1755,12 @@ document.addEventListener('keydown', function(e) {
     countEl.style.display = totalUnidades > 0 ? 'flex' : 'none';
 
     if (carrito.length === 0) {
-      itemsEl.innerHTML = '';
-      itemsEl.appendChild(emptyEl);
-      emptyEl.style.display = 'block';
+      if (emptyEl) { itemsEl.innerHTML = ''; itemsEl.appendChild(emptyEl); emptyEl.style.display = 'block'; }
       footerEl.style.display = 'none';
       return;
     }
 
-    emptyEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'none';
     footerEl.style.display = 'block';
     totalEl.textContent = '$' + totalPrecio.toLocaleString('es-AR') + ' ARS';
 
@@ -1789,6 +1790,7 @@ document.addEventListener('keydown', function(e) {
   function toggleCarrito() {
     const drawer  = document.getElementById('cart-drawer');
     const overlay = document.getElementById('cart-overlay');
+    if (!drawer || !overlay) return;
     const abierto = drawer.style.right === '0px';
     drawer.style.right    = abierto ? '-420px' : '0px';
     overlay.style.display = abierto ? 'none' : 'block';
