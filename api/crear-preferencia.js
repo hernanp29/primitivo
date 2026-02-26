@@ -3,6 +3,9 @@ export default async function handler(req, res) {
 
   const { items } = req.body;
 
+  // La URL base se lee desde la variable de entorno (configurada en Vercel o .env)
+  const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
+
   const preferencia = {
     items: items.map(item => ({
       title: item.nombre,
@@ -11,9 +14,9 @@ export default async function handler(req, res) {
       currency_id: "ARS"
     })),
     back_urls: {
-      success: "https://primitivo-ten.vercel.app/?pago=ok",
-      failure: "https://primitivo-ten.vercel.app/?pago=error",
-      pending: "https://primitivo-ten.vercel.app/?pago=pendiente"
+      success:  `${siteUrl}/?pago=ok`,
+      failure:  `${siteUrl}/?pago=error`,
+      pending:  `${siteUrl}/?pago=pendiente`
     },
     auto_return: "approved"
   };
