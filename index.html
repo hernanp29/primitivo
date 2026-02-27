@@ -497,10 +497,10 @@
     .car-item:hover .car-img { transform: scale(1.07); }
     .car-overlay {
       position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 55%);
-      opacity: .65; transition: opacity .3s; z-index: 1;
+      background: linear-gradient(to top, rgba(0,0,0,.82) 0%, rgba(0,0,0,.15) 45%, transparent 70%);
+      opacity: 1; z-index: 1;
+      pointer-events: none;
     }
-    .car-item:hover .car-overlay { opacity: 1; }
     .car-corner {
       position: absolute; top: 0; left: 0; width: 0; height: 0;
       border-style: solid; border-width: 24px 24px 0 0;
@@ -508,17 +508,17 @@
       opacity: 0; transition: opacity .3s; z-index: 3;
     }
     .car-item:hover .car-corner { opacity: 1; }
+    /* Info siempre visible en tienda */
     .car-info {
       position: absolute; bottom: 0; left: 0; right: 0;
-      padding: .9rem 1rem; z-index: 2;
-      transform: translateY(6px); opacity: 0;
-      transition: all .35s cubic-bezier(.16,1,.3,1);
+      padding: .7rem .9rem; z-index: 2;
+      transform: none; opacity: 1;
     }
-    .car-item:hover .car-info { transform: translateY(0); opacity: 1; }
-    .car-cat { font-family:'Bebas Neue',sans-serif; font-size:.55rem; letter-spacing:4px; color:var(--red-hot); margin-bottom:.2rem; }
-    .car-name { font-family:'Permanent Marker',cursive; font-size:.95rem; color:var(--cream); text-shadow:1px 1px 0 var(--red); }
+    .car-cat { font-family:'Bebas Neue',sans-serif; font-size:.55rem; letter-spacing:4px; color:var(--red-hot); margin-bottom:.15rem; }
+    .car-name { font-family:'Permanent Marker',cursive; font-size:.9rem; color:var(--cream); text-shadow:1px 1px 0 var(--red); line-height:1.1; }
+    .car-price { font-family:'Bebas Neue',sans-serif; font-size:.75rem; color:var(--yellow); margin-top:.15rem; letter-spacing:1px; }
     .car-zoom {
-      position: absolute; top: 50%; left: 50%;
+      position: absolute; top: 40%; left: 50%;
       transform: translate(-50%,-50%) scale(.7);
       width: 42px; height: 42px;
       border: 2px solid rgba(255,255,255,.5); border-radius: 50%;
@@ -637,8 +637,18 @@
     }
     .cat-pill.active,.cat-pill:hover{background:var(--red);color:var(--cream);border-color:var(--red-hot);}
 
-    /* ── FILTROS DE SUBCATEGORÍA (Ropa / Piercing) ── */
-    .subcat-filters-wrap {
+    .subcat-inline-filters { display:flex; gap:.35rem; flex-wrap:wrap; }
+    .subcat-inline-btn {
+      font-family:'Bebas Neue',sans-serif;
+      font-size:.58rem; letter-spacing:2px;
+      padding:.25rem .75rem;
+      background:transparent; color:var(--fog);
+      border:1px solid var(--ash); cursor:pointer;
+      transition:all .2s;
+      clip-path: polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%);
+    }
+    .subcat-inline-btn:hover { border-color:rgba(192,57,43,.5); color:var(--bone); }
+    .subcat-inline-btn.active { background:var(--red); color:var(--cream); border-color:var(--red-hot); }
       margin-bottom: 1.5rem;
       padding: 1.2rem 1.5rem;
       background: var(--smoke);
@@ -1215,16 +1225,6 @@
     <a href="#" class="btn-ghost" style="align-self:flex-start;margin-top:1rem">Tienda completa →</a>
   </div>
 
-  <!-- Filtros de subcategoría -->
-  <div id="filtros-ropa-wrap" class="subcat-filters-wrap" style="display:none;">
-    <span class="subcat-filters-label">🧥 Filtrar Ropa</span>
-    <div class="subcat-filter-row" id="filtros-ropa"></div>
-  </div>
-  <div id="filtros-piercing-wrap" class="subcat-filters-wrap" style="display:none;">
-    <span class="subcat-filters-label">💎 Filtrar Piercings</span>
-    <div class="subcat-filter-row" id="filtros-piercing"></div>
-  </div>
-
   <div id="contenedor-tienda">
     <p style="color:var(--fog);font-family:'Bebas Neue',sans-serif;letter-spacing:4px;font-size:.8rem;">Cargando tienda...</p>
   </div>
@@ -1545,11 +1545,11 @@ document.addEventListener('keydown', function(e) {
                     <div class="car-info">
                         <p class="car-cat">${catNombre}</p>
                         <p class="car-name">${item.nombre}</p>
-                        <p style="font-family:'Bebas Neue',sans-serif;font-size:.7rem;color:var(--yellow);margin-top:.2rem;">$${item.precio} ARS</p>
+                        <p class="car-price">$${Number(item.precio||0).toLocaleString('es-AR')} ARS</p>
                     </div>
                     <button class="merch-add" style="position:absolute;bottom:0;left:0;right:0;z-index:5;"
-                        onclick="event.stopPropagation();agregarAlCarrito('${nomEsc}','${catEsc}',${parseFloat(item.precio)||0},'${imgEsc}')">
-                        <span>+ Agregar al carrito</span>
+                        onclick="event.stopPropagation();pedirPorWA('${nomEsc}')">
+                        <span>💬 Consultar por WA</span>
                     </button>
                     ${item.esNuevo === 'si' ? '<div class="merch-badge" style="position:absolute;top:.6rem;right:.6rem;z-index:5;">NUEVO</div>' : ''}
                 </div>`;
@@ -1578,10 +1578,14 @@ document.addEventListener('keydown', function(e) {
 
         const row = document.createElement('div');
         row.className = 'cat-row';
+        row.setAttribute('data-cat', catNombre);
         row.innerHTML = `
             <div class="cat-row-header">
                 <span class="cat-row-title">${catNombre}</span>
-                <span class="cat-count">${total} ${esTienda ? 'producto' : 'foto'}${total !== 1 ? 's' : ''}</span>
+                <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;">
+                    <div class="subcat-inline-filters" id="inline-filtros-${catNombre.replace(/[^a-zA-Z0-9]/g,'_')}"></div>
+                    <span class="cat-count">${total} ${esTienda ? 'producto' : 'foto'}${total !== 1 ? 's' : ''}</span>
+                </div>
             </div>
             <div class="carrusel-wrap">
                 <button class="car-arrow car-arrow-prev" id="${id}-prev" onclick="moverCar('${id}',-1)" disabled>&#8249;</button>
@@ -1594,6 +1598,7 @@ document.addEventListener('keydown', function(e) {
         `;
         contenedor.appendChild(row);
         _carState[id] = { pagina: 0, maxPag };
+        if (esTienda) construirFiltrosInline(catNombre, items);
     }
 
     function moverCar(id, dir) {
@@ -1701,125 +1706,138 @@ document.addEventListener('keydown', function(e) {
         }
     }
 
-    // ── Filtros de subcategoría ──────────────────────────────────
-    // catKeywords: palabras clave para detectar si un item pertenece a la categoría principal
-    function construirFiltrosSubcat(todosLosItems, catKey, catKeywords, filtrosId, wrapId) {
-        // Buscar items que pertenezcan a esta categoría (por nombre o por campo categoria)
-        const itemsCat = todosLosItems.filter(item => {
-            const texto = (item.categoria + ' ' + item.nombre).toLowerCase();
-            return catKeywords.some(k => texto.includes(k));
-        });
-        if (itemsCat.length === 0) return; // No hay items de esta categoría
+    // ── Filtros inline por categoría ────────────────────────────
+    const SUBCAT_KEYS = {
+        ropa: [
+            { key: 'remera',    label: 'Remeras' },
+            { key: 'buzo',      label: 'Buzos' },
+            { key: 'campera',   label: 'Camperas' },
+            { key: 'musculosa', label: 'Musculosas' },
+            { key: 'jean',      label: 'Jeans' },
+            { key: 'pantalon',  label: 'Pantalones' },
+        ],
+        piercing: [
+            { key: 'septum',    label: 'Septum' },
+            { key: 'helix',     label: 'Helix' },
+            { key: 'tragus',    label: 'Tragus' },
+            { key: 'labret',    label: 'Labret' },
+            { key: 'nariz',     label: 'Nariz' },
+            { key: 'oreja',     label: 'Oreja' },
+            { key: 'lengua',    label: 'Lengua' },
+            { key: 'ceja',      label: 'Ceja' },
+            { key: 'ombligo',   label: 'Ombligo' },
+            { key: 'navel',     label: 'Ombligo' },
+            { key: 'titanio',   label: 'Titanio' },
+            { key: 'acero',     label: 'Acero' },
+            { key: 'oro',       label: 'Oro' },
+        ],
+    };
 
-        // Obtener subcategorías únicas (usamos el campo categoria del CSV)
-        const subsets = new Map();
-        subsets.set('todos', { label: 'Todos', items: itemsCat });
-        itemsCat.forEach(item => {
-            const sub = (item.subcategoria || item.categoria || '').trim();
-            if (sub && !subsets.has(sub)) subsets.set(sub, { label: sub, items: [] });
-            if (sub) subsets.get(sub).items.push(item);
-        });
+    function construirFiltrosInline(catNombre, items) {
+        // Detectar a qué tipo pertenece esta categoría
+        const catLow = catNombre.toLowerCase();
+        let tipo = null;
+        if (['ropa','remera','buzo','campera','musculosa','camiseta','pantalon','jean'].some(k => catLow.includes(k))) tipo = 'ropa';
+        else if (['piercing','arito','aro','septum','helix','tragus','labret'].some(k => catLow.includes(k))) tipo = 'piercing';
+        if (!tipo) return;
 
-        // Si no hay subcategorías reales, igual mostramos filtro genérico
-        // Intentamos derivar subcategorías del nombre del producto
-        const subKeyMap = {
-            ropa: [
-                { key: 'remera',    label: 'Remeras' },
-                { key: 'buzo',      label: 'Buzos' },
-                { key: 'campera',   label: 'Camperas' },
-                { key: 'musculosa', label: 'Musculosas' },
-                { key: 'jean',      label: 'Jeans' },
-                { key: 'pantalon',  label: 'Pantalones' },
-            ],
-            piercing: [
-                { key: 'septum',    label: 'Septum' },
-                { key: 'helix',     label: 'Helix' },
-                { key: 'tragus',    label: 'Tragus' },
-                { key: 'labret',    label: 'Labret' },
-                { key: 'nariz',     label: 'Nariz' },
-                { key: 'oreja',     label: 'Oreja' },
-                { key: 'lengua',    label: 'Lengua' },
-                { key: 'ceja',      label: 'Ceja' },
-                { key: 'navel',     label: 'Ombligo' },
-                { key: 'ombligo',   label: 'Ombligo' },
-                { key: 'titanio',   label: 'Titanio' },
-                { key: 'acero',     label: 'Acero' },
-                { key: 'oro',       label: 'Oro' },
-            ],
-        };
+        const contenedorId = 'inline-filtros-' + catNombre.replace(/[^a-zA-Z0-9]/g,'_');
+        const cont = document.getElementById(contenedorId);
+        if (!cont) return;
 
-        const filtros = [{ key: '_todos_', label: 'Todos', count: itemsCat.length }];
-        (subKeyMap[catKey] || []).forEach(({ key, label }) => {
-            const coincidentes = itemsCat.filter(item =>
+        const filtros = [{ key: '_todos_', label: 'Todos', count: items.length }];
+        (SUBCAT_KEYS[tipo] || []).forEach(({ key, label }) => {
+            const count = items.filter(item =>
                 (item.categoria + ' ' + item.nombre).toLowerCase().includes(key)
-            );
-            if (coincidentes.length > 0 && !filtros.find(f => f.label === label)) {
-                filtros.push({ key, label, count: coincidentes.length });
+            ).length;
+            if (count > 0 && !filtros.find(f => f.label === label)) {
+                filtros.push({ key, label, count });
             }
         });
 
-        // También agregar subcategorías del CSV si existen
-        subsets.forEach(({ label, items }, sub) => {
-            if (sub !== 'todos' && items.length > 0 && !filtros.find(f => f.label === label)) {
-                filtros.push({ key: sub, label, count: items.length });
-            }
-        });
+        if (filtros.length <= 1) return;
 
-        if (filtros.length <= 1) return; // Solo "Todos", nada útil que filtrar
+        // Guardar items originales de esta fila en un atributo del contenedor padre
+        const row = cont.closest('.cat-row');
+        if (row) row._itemsOriginales = items;
 
-        // Mostrar el contenedor
-        const wrap = document.getElementById(wrapId);
-        const cont = document.getElementById(filtrosId);
-        if (!wrap || !cont) return;
-        wrap.style.display = 'block';
-
-        // Renderizar botones
         cont.innerHTML = '';
         filtros.forEach(({ key, label, count }, idx) => {
             const btn = document.createElement('button');
-            btn.className = 'subcat-filter-btn' + (idx === 0 ? ' active' : '');
-            btn.innerHTML = label + `<span class="count-badge">${count}</span>`;
-            btn.addEventListener('click', () => {
-                cont.querySelectorAll('.subcat-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.className = 'subcat-inline-btn' + (idx === 0 ? ' active' : '');
+            btn.textContent = label + (count < items.length ? ` (${count})` : '');
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                cont.querySelectorAll('.subcat-inline-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                aplicarFiltroSubcat(catKey, key, catKeywords);
+                filtrarFilaCarrusel(catNombre, key, items);
             });
             cont.appendChild(btn);
         });
     }
 
-    function aplicarFiltroSubcat(catKey, filtroKey, catKeywords) {
-        const contenedor = document.getElementById('contenedor-tienda');
-        // Filtrar items
-        let itemsFiltrados;
-        if (filtroKey === '_todos_') {
-            itemsFiltrados = _tiendaItems.filter(item => {
-                const texto = (item.categoria + ' ' + item.nombre).toLowerCase();
-                return catKeywords.some(k => texto.includes(k));
-            });
-        } else {
-            itemsFiltrados = _tiendaItems.filter(item => {
-                const texto = (item.categoria + ' ' + item.nombre).toLowerCase();
-                const esDeCat = catKeywords.some(k => texto.includes(k));
-                return esDeCat && texto.includes(filtroKey.toLowerCase());
-            });
+    function filtrarFilaCarrusel(catNombre, filtroKey, itemsOriginales) {
+        const id = 'car-' + catNombre.replace(/[^a-zA-Z0-9]/g,'_');
+        // Encontrar el track de esta fila
+        const rows = document.querySelectorAll('.cat-row[data-cat="' + catNombre + '"]');
+        if (!rows.length) return;
+        const row = rows[rows.length - 1];
+        const track = row.querySelector('.carrusel-track');
+        if (!track) return;
+
+        let filtrados = filtroKey === '_todos_'
+            ? itemsOriginales
+            : itemsOriginales.filter(item =>
+                (item.categoria + ' ' + item.nombre).toLowerCase().includes(filtroKey.toLowerCase())
+              );
+
+        const placeholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%231F1F1F"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23555" font-size="14" font-family="monospace" dy=".3em"%3ESIN IMAGEN%3C/text%3E%3C/svg%3E';
+        track.innerHTML = filtrados.map(item => {
+            const nomEsc = item.nombre.replace(/'/g,"\'");
+            const catEsc = catNombre.replace(/'/g,"\'");
+            const imgEsc = item.urlImg.replace(/'/g,"%27");
+            return `<div class="car-item tienda" onclick="abrirLightbox('${imgEsc}','${catEsc}','${nomEsc}')">
+                <img class="car-img" src="${item.urlImg||placeholder}" alt="${item.nombre}" loading="lazy">
+                <div class="car-overlay"></div>
+                <div class="car-corner"></div>
+                <div class="car-zoom">⊕</div>
+                <div class="car-info">
+                    <p class="car-cat">${catNombre}</p>
+                    <p class="car-name">${item.nombre}</p>
+                    <p class="car-price">$${Number(item.precio||0).toLocaleString('es-AR')} ARS</p>
+                </div>
+                <button class="merch-add" style="position:absolute;bottom:0;left:0;right:0;z-index:5;"
+                    onclick="event.stopPropagation();pedirPorWA('${nomEsc}')">
+                    <span>💬 Consultar por WA</span>
+                </button>
+                ${item.esNuevo === 'si' ? '<div class="merch-badge" style="position:absolute;top:.6rem;right:.6rem;z-index:5;">NUEVO</div>' : ''}
+            </div>`;
+        }).join('');
+
+        // Actualizar count
+        const countEl = row.querySelector('.cat-count');
+        if (countEl) countEl.textContent = filtrados.length + ' producto' + (filtrados.length !== 1 ? 's' : '');
+
+        // Reset carrusel
+        track.style.transform = 'translateX(0)';
+        const dotsCont = row.querySelector('.car-dots');
+        if (dotsCont) {
+            const vis = ITEMS_VISIBLES;
+            const maxPag = Math.max(0, Math.ceil(filtrados.length / vis) - 1);
+            dotsCont.innerHTML = maxPag > 0
+                ? Array.from({length: maxPag+1}, (_,i) =>
+                    `<button class="car-dot ${i===0?'active':''}" onclick="irACar('${track.id.replace('-track','')}',${i})"></button>`
+                  ).join('')
+                : '';
         }
-
-        // Re-renderizar solo las filas de la categoría afectada (sin tocar las demás)
-        // Reconstruimos todo el contenedor tienda pero mostrando todos los items
-        // cuando el filtro no aplica, y los filtrados cuando aplica
-        const itemsRestantes = _tiendaItems.filter(item => {
-            const texto = (item.categoria + ' ' + item.nombre).toLowerCase();
-            const esDeCat = catKeywords.some(k => texto.includes(k));
-            if (!esDeCat) return true; // no es de esta cat, mostrar igual
-            if (filtroKey === '_todos_') return true;
-            return texto.includes(filtroKey.toLowerCase());
-        });
-
-        contenedor.innerHTML = '';
-        const grupos = agruparPorCategoria(itemsRestantes);
-        grupos.forEach((items, cat) => crearCarrusel(contenedor, cat, items, true));
     }
+
+    function construirFiltrosSubcat(todosLosItems, catKey, catKeywords, filtrosId, wrapId) {
+        // Legacy: ya no usamos los wrappers separados, filtros van inline
+        // Esta función queda vacía para no romper la llamada
+    }
+
+    function aplicarFiltroSubcat() { /* legacy, no-op */ }
 
     function pedirPorWA(prod) {
         const telefono = CONFIG.whatsappNumber;
@@ -1833,246 +1851,6 @@ document.addEventListener('keydown', function(e) {
     });
 </script>
 
-<!-- ══════ CARRITO ══════ -->
-
-<!-- Botón flotante -->
-<button id="cart-fab" onclick="toggleCarrito()" style="
-  position:fixed; bottom:2rem; right:2rem; z-index:5000;
-  width:58px; height:58px; border-radius:50%;
-  background:var(--red); border:2px solid var(--red-hot);
-  color:var(--cream); font-size:1.4rem;
-  cursor:pointer; box-shadow:0 4px 20px rgba(192,57,43,.5);
-  transition:transform .2s, box-shadow .2s;
-  display:flex; align-items:center; justify-content:center;
-" onmouseenter="this.style.transform='scale(1.1)'" onmouseleave="this.style.transform='scale(1)'">
-  🛒
-  <span id="cart-count" style="
-    position:absolute; top:-4px; right:-4px;
-    background:var(--yellow); color:var(--noir);
-    font-family:'Bebas Neue',sans-serif; font-size:.65rem;
-    width:20px; height:20px; border-radius:50%;
-    display:none; align-items:center; justify-content:center;
-    font-weight:bold;
-  ">0</span>
-</button>
-
-<!-- Drawer del carrito -->
-<div id="cart-drawer" style="
-  position:fixed; top:0; right:-420px; width:420px; max-width:100vw;
-  height:100vh; background:var(--charcoal);
-  border-left:1px solid rgba(192,57,43,.3);
-  z-index:6000; transition:right .35s cubic-bezier(.16,1,.3,1);
-  display:flex; flex-direction:column;
-  box-shadow:-10px 0 40px rgba(0,0,0,.6);
-">
-  <!-- Header -->
-  <div style="padding:1.5rem 1.5rem 1rem; border-bottom:1px solid var(--ash); display:flex; justify-content:space-between; align-items:center;">
-    <div>
-      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:5px; font-size:.65rem; color:var(--red-hot);">PRIMITIVO</p>
-      <p style="font-family:'Permanent Marker',cursive; font-size:1.4rem; color:var(--cream); text-shadow:1px 1px 0 var(--red);">Tu Carrito</p>
-    </div>
-    <button onclick="toggleCarrito()" style="background:none;border:none;color:var(--fog);font-size:1.5rem;cursor:pointer;transition:color .2s;" onmouseenter="this.style.color='var(--cream)'" onmouseleave="this.style.color='var(--fog)'">✕</button>
-  </div>
-
-  <!-- Items -->
-  <div id="cart-items" style="flex:1; overflow-y:auto; padding:1rem 1.5rem;">
-    <div id="cart-empty" style="text-align:center; padding:4rem 1rem; color:var(--fog);">
-      <p style="font-size:2.5rem; margin-bottom:1rem;">🛒</p>
-      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:.8rem;">Tu carrito está vacío</p>
-    </div>
-  </div>
-
-  <!-- Footer con total y botón pagar -->
-  <div id="cart-footer" style="display:none; padding:1.5rem; border-top:1px solid var(--ash);">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
-      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.8rem; color:var(--fog);">TOTAL</p>
-      <p id="cart-total" style="font-family:'Permanent Marker',cursive; font-size:1.4rem; color:var(--cream); text-shadow:1px 1px 0 var(--red);"></p>
-    </div>
-    <button onclick="vaciarCarrito()" style="
-      width:100%; padding:.6rem; margin-bottom:.7rem;
-      background:transparent; color:var(--fog);
-      border:1px solid var(--ash); cursor:pointer;
-      font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.65rem;
-      transition:all .3s;
-    " onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)'" onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--fog)'">
-      Vaciar carrito
-    </button>
-    <button onclick="abrirModalRetiro()" id="btn-pagar" style="
-      width:100%; padding:.9rem;
-      background:var(--red); color:var(--cream);
-      border:2px solid var(--red-hot); cursor:pointer;
-      font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:.85rem;
-      clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
-      transition:background .3s, box-shadow .3s;
-    " onmouseenter="this.style.background='var(--red-hot)';this.style.boxShadow='0 0 25px rgba(231,76,60,.5)'" onmouseleave="this.style.background='var(--red)';this.style.boxShadow='none'">
-      Pagar con MercadoPago ✦
-    </button>
-    <p style="text-align:center; font-size:.65rem; color:var(--fog); margin-top:.8rem; font-family:'Bebas Neue',sans-serif; letter-spacing:2px;">PAGO SEGURO · TARJETAS · TRANSFERENCIA</p>
-  </div>
-</div>
-
-<!-- Overlay oscuro detrás del drawer -->
-<div id="cart-overlay" onclick="toggleCarrito()" style="
-  display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,.6); z-index:5999;
-  backdrop-filter:blur(2px);
-"></div>
-
-<style>
-  #cart-items::-webkit-scrollbar { width:4px; }
-  #cart-items::-webkit-scrollbar-track { background:var(--smoke); }
-  #cart-items::-webkit-scrollbar-thumb { background:var(--red); border-radius:2px; }
-  .cart-item { display:flex; gap:1rem; padding:1rem 0; border-bottom:1px solid var(--ash); align-items:center; }
-  .cart-item-img { width:64px; height:64px; object-fit:cover; border:1px solid rgba(192,57,43,.2); flex-shrink:0; }
-  .cart-item-info { flex:1; min-width:0; }
-  .cart-item-cat { font-family:'Bebas Neue',sans-serif; font-size:.5rem; letter-spacing:4px; color:var(--red-hot); }
-  .cart-item-name { font-family:'Bebas Neue',sans-serif; font-size:.9rem; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .cart-item-price { font-size:.75rem; color:var(--fog); margin-top:.2rem; }
-  .cart-item-qty { display:flex; align-items:center; gap:.5rem; margin-top:.5rem; }
-  .qty-btn { width:24px; height:24px; background:var(--ash); border:none; color:var(--bone); cursor:pointer; font-size:.9rem; display:flex; align-items:center; justify-content:center; transition:background .2s; }
-  .qty-btn:hover { background:var(--red); }
-  .qty-num { font-family:'Bebas Neue',sans-serif; font-size:.9rem; color:var(--cream); min-width:20px; text-align:center; }
-  .cart-item-remove { background:none; border:none; color:var(--fog); cursor:pointer; font-size:1rem; padding:.2rem; transition:color .2s; flex-shrink:0; }
-  .cart-item-remove:hover { color:var(--red-hot); }
-  @media(max-width:480px) { #cart-drawer { width:100vw; right:-100vw; } }
-</style>
-
-<script>
-  let carrito = [];
-
-  function agregarAlCarrito(nombre, categoria, precio, imagen) {
-    const idx = carrito.findIndex(i => i.nombre === nombre);
-    if (idx >= 0) {
-      carrito[idx].cantidad++;
-    } else {
-      carrito.push({ nombre, categoria, precio, imagen, cantidad: 1 });
-    }
-    renderCarrito();
-    const drawer = document.getElementById('cart-drawer');
-    if (drawer.style.right !== '0px') toggleCarrito();
-    const fab = document.getElementById('cart-fab');
-    fab.style.transform = 'scale(1.3)';
-    setTimeout(() => fab.style.transform = 'scale(1)', 200);
-  }
-
-  function cambiarCantidad(nombre, delta) {
-    const idx = carrito.findIndex(i => i.nombre === nombre);
-    if (idx < 0) return;
-    carrito[idx].cantidad += delta;
-    if (carrito[idx].cantidad <= 0) carrito.splice(idx, 1);
-    renderCarrito();
-  }
-
-  function eliminarItem(nombre) {
-    carrito = carrito.filter(i => i.nombre !== nombre);
-    renderCarrito();
-  }
-
-  function vaciarCarrito() {
-    carrito = [];
-    renderCarrito();
-  }
-
-  function renderCarrito() {
-    const itemsEl  = document.getElementById('cart-items');
-    const emptyEl  = document.getElementById('cart-empty');
-    const footerEl = document.getElementById('cart-footer');
-    const countEl  = document.getElementById('cart-count');
-    const totalEl  = document.getElementById('cart-total');
-
-    // Si el DOM del carrito todavía no existe, salir
-    if (!countEl || !itemsEl || !footerEl || !totalEl) return;
-
-    const totalUnidades = carrito.reduce((s, i) => s + i.cantidad, 0);
-    const totalPrecio   = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-
-    countEl.textContent = totalUnidades;
-    countEl.style.display = totalUnidades > 0 ? 'flex' : 'none';
-
-    if (carrito.length === 0) {
-      if (emptyEl) { itemsEl.innerHTML = ''; itemsEl.appendChild(emptyEl); emptyEl.style.display = 'block'; }
-      footerEl.style.display = 'none';
-      return;
-    }
-
-    if (emptyEl) emptyEl.style.display = 'none';
-    footerEl.style.display = 'block';
-    totalEl.textContent = '$' + totalPrecio.toLocaleString('es-AR') + ' ARS';
-
-    itemsEl.innerHTML = '';
-    carrito.forEach(item => {
-      const nomSafe = item.nombre.replace(/'/g, "\\'");
-      const div = document.createElement('div');
-      div.className = 'cart-item';
-      div.innerHTML = `
-        <img src="${item.imagen}" class="cart-item-img" onerror="this.style.display='none'">
-        <div class="cart-item-info">
-          <p class="cart-item-cat">${item.categoria}</p>
-          <p class="cart-item-name">${item.nombre}</p>
-          <p class="cart-item-price">$${(item.precio * item.cantidad).toLocaleString('es-AR')} ARS</p>
-          <div class="cart-item-qty">
-            <button class="qty-btn" onclick="cambiarCantidad('${nomSafe}', -1)">−</button>
-            <span class="qty-num">${item.cantidad}</span>
-            <button class="qty-btn" onclick="cambiarCantidad('${nomSafe}', 1)">+</button>
-          </div>
-        </div>
-        <button class="cart-item-remove" onclick="eliminarItem('${nomSafe}')">✕</button>
-      `;
-      itemsEl.appendChild(div);
-    });
-  }
-
-  function toggleCarrito() {
-    const drawer  = document.getElementById('cart-drawer');
-    const overlay = document.getElementById('cart-overlay');
-    if (!drawer || !overlay) return;
-    const abierto = drawer.style.right === '0px';
-    drawer.style.right    = abierto ? '-420px' : '0px';
-    overlay.style.display = abierto ? 'none' : 'block';
-    document.body.style.overflow = abierto ? '' : 'hidden';
-  }
-
-  async function pagar() {
-    // La lógica de pago ahora pasa por el modal de retiro (abrirModalRetiro → confirmarPago)
-    abrirModalRetiro();
-  }
-
-  window.addEventListener('DOMContentLoaded', () => {
-    const params    = new URLSearchParams(window.location.search);
-    const pago      = params.get('pago');
-    const paymentId = params.get('payment_id') || params.get('collection_id') || '';
-
-    if (pago === 'ok') {
-      const carritoGuardado = JSON.parse(sessionStorage.getItem('carritoGuardado') || '[]');
-      sessionStorage.removeItem('carritoGuardado');
-      vaciarCarrito();
-
-      // Generar código único de retiro: PRIM-YYYYMMDD-XXXX
-      const ahora  = new Date();
-      const fecha  = ahora.toISOString().slice(0,10).replace(/-/g,'');
-      const rand   = Math.random().toString(36).substring(2,6).toUpperCase();
-      const codigo = `PRIM-${fecha}-${rand}`;
-
-      // Guardar en Google Sheets (no bloquea la UI si falla)
-      fetch('/api/guardar-pedido', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          codigo,
-          fecha:    ahora.toISOString(),
-          items:    carritoGuardado.map(i => ({ nombre: i.nombre, cantidad: i.cantidad, precio: i.precio })),
-          total:    carritoGuardado.reduce((s,i) => s + i.precio * i.cantidad, 0),
-          paymentId
-        })
-      }).catch(err => console.warn('No se pudo guardar el pedido en Sheets:', err));
-
-      abrirModalPagoOk(carritoGuardado, codigo, ahora, paymentId);
-    }
-    else if (pago === 'error')    { alert('❌ El pago no se completó. Podés intentarlo de nuevo.'); }
-    else if (pago === 'pendiente'){ alert('⏳ Tu pago está pendiente. Te avisamos cuando se confirme.'); }
-    if (pago) window.history.replaceState({}, '', window.location.pathname);
-  });
-</script>
 
 <script>
   // Hamburger menu
@@ -2091,398 +1869,7 @@ document.addEventListener('keydown', function(e) {
     });
   });
 </script>
-<!-- ═══════════════════════════════════════════════════════
-     MODAL — Aviso retiro en local (antes de pagar)
-════════════════════════════════════════════════════════ -->
-<div id="modal-retiro" style="
-  display:none; position:fixed; inset:0; z-index:9000;
-  background:rgba(0,0,0,.85); backdrop-filter:blur(6px);
-  align-items:center; justify-content:center; padding:1.5rem;
-">
-  <div style="
-    background:var(--charcoal);
-    border:1px solid rgba(192,57,43,.4);
-    max-width:480px; width:100%;
-    padding:2.5rem 2rem;
-    position:relative;
-    box-shadow: 0 0 60px rgba(192,57,43,.2), inset 0 0 0 1px rgba(255,255,255,.03);
-  ">
-    <!-- Barra roja top -->
-    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);box-shadow:0 0 20px var(--red);"></div>
 
-    <!-- Ícono -->
-    <div style="text-align:center; font-size:3rem; margin-bottom:1rem;">🏪</div>
-
-    <!-- Título -->
-    <h2 style="
-      font-family:'Permanent Marker',cursive;
-      font-size:1.7rem; color:var(--cream);
-      text-shadow:2px 2px 0 var(--red);
-      text-align:center; margin-bottom:.8rem; line-height:1.1;
-    ">Solo retiro en local</h2>
-
-    <!-- Aviso principal -->
-    <div style="
-      background:rgba(192,57,43,.12);
-      border:1px solid rgba(192,57,43,.35);
-      border-left:4px solid var(--red);
-      padding:1rem 1.2rem; margin-bottom:1.5rem;
-    ">
-      <p style="
-        font-family:'Bebas Neue',sans-serif;
-        letter-spacing:2px; font-size:.75rem;
-        color:var(--red-hot); margin-bottom:.4rem;
-      ">⚠ IMPORTANTE</p>
-      <p style="font-size:.85rem; line-height:1.7; color:var(--bone);">
-        <strong>No realizamos envíos.</strong> Una vez que completes el pago
-        vas a recibir un <strong>QR o email de confirmación</strong> que tenés
-        que presentar en el local para retirar tu pedido.
-      </p>
-    </div>
-
-    <!-- Pasos -->
-    <div style="margin-bottom:2rem;">
-      <p style="
-        font-family:'Bebas Neue',sans-serif;
-        letter-spacing:3px; font-size:.65rem;
-        color:var(--fog); margin-bottom:.8rem;
-      ">¿CÓMO FUNCIONA?</p>
-      <div style="display:flex; flex-direction:column; gap:.6rem;">
-        <div style="display:flex; align-items:flex-start; gap:.8rem;">
-          <span style="
-            font-family:'Bebas Neue',sans-serif;
-            background:var(--red); color:var(--cream);
-            width:22px; height:22px; border-radius:50%;
-            display:flex; align-items:center; justify-content:center;
-            font-size:.75rem; flex-shrink:0; margin-top:.1rem;
-          ">1</span>
-          <p style="font-size:.82rem; line-height:1.6; color:rgba(212,201,176,.75);">Completás el pago en MercadoPago</p>
-        </div>
-        <div style="display:flex; align-items:flex-start; gap:.8rem;">
-          <span style="
-            font-family:'Bebas Neue',sans-serif;
-            background:var(--red); color:var(--cream);
-            width:22px; height:22px; border-radius:50%;
-            display:flex; align-items:center; justify-content:center;
-            font-size:.75rem; flex-shrink:0; margin-top:.1rem;
-          ">2</span>
-          <p style="font-size:.82rem; line-height:1.6; color:rgba(212,201,176,.75);">Recibís un <strong style="color:var(--cream)">QR o email</strong> de confirmación</p>
-        </div>
-        <div style="display:flex; align-items:flex-start; gap:.8rem;">
-          <span style="
-            font-family:'Bebas Neue',sans-serif;
-            background:var(--red); color:var(--cream);
-            width:22px; height:22px; border-radius:50%;
-            display:flex; align-items:center; justify-content:center;
-            font-size:.75rem; flex-shrink:0; margin-top:.1rem;
-          ">3</span>
-          <p style="font-size:.82rem; line-height:1.6; color:rgba(212,201,176,.75);">Venís al local y mostrás el comprobante para retirar</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Botones -->
-    <div style="display:flex; gap:.8rem; flex-direction:column;">
-      <button onclick="confirmarPago()" style="
-        width:100%; padding:1rem;
-        background:var(--red); color:var(--cream);
-        border:2px solid var(--red-hot); cursor:pointer;
-        font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:.85rem;
-        clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
-        transition:background .3s, box-shadow .3s;
-      "
-      onmouseenter="this.style.background='var(--red-hot)';this.style.boxShadow='0 0 25px rgba(231,76,60,.5)'"
-      onmouseleave="this.style.background='var(--red)';this.style.boxShadow='none'"
-      >
-        Entendido — Ir a pagar ✦
-      </button>
-      <button onclick="cerrarModalRetiro()" style="
-        width:100%; padding:.7rem;
-        background:transparent; color:var(--fog);
-        border:1px solid var(--ash); cursor:pointer;
-        font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.7rem;
-        transition:all .3s;
-      "
-      onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)'"
-      onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--fog)'"
-      >
-        Volver al carrito
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     MODAL — Pago exitoso + QR de retiro
-════════════════════════════════════════════════════════ -->
-<div id="modal-pago-ok" style="
-  display:none; position:fixed; inset:0; z-index:9000;
-  background:rgba(0,0,0,.88); backdrop-filter:blur(8px);
-  align-items:flex-start; justify-content:center;
-  padding:1.5rem; overflow-y:auto;
-">
-  <div style="
-    background:var(--charcoal);
-    border:1px solid rgba(34,139,34,.35);
-    max-width:500px; width:100%;
-    padding:0;
-    position:relative;
-    box-shadow: 0 0 80px rgba(34,139,34,.18), inset 0 0 0 1px rgba(255,255,255,.03);
-    margin:auto;
-  ">
-    <!-- Barra verde top -->
-    <div style="height:4px;background:linear-gradient(to right,#27ae60,#2ecc71);box-shadow:0 0 20px #27ae60;"></div>
-
-    <!-- Header -->
-    <div style="padding:2rem 2rem 1.2rem; text-align:center; border-bottom:1px solid var(--ash);">
-      <div style="font-size:3rem; margin-bottom:.6rem;">✅</div>
-      <h2 style="
-        font-family:'Permanent Marker',cursive;
-        font-size:1.8rem; color:var(--cream);
-        text-shadow:2px 2px 0 #27ae60; line-height:1.1; margin-bottom:.4rem;
-      ">¡Pago exitoso!</h2>
-      <p style="font-size:.8rem; color:rgba(212,201,176,.55); font-family:'Bebas Neue',sans-serif; letter-spacing:3px;">
-        GUARDÁ ESTE QR — LO VAS A NECESITAR PARA RETIRAR
-      </p>
-    </div>
-
-    <!-- Código de retiro -->
-    <div style="padding:1.2rem 2rem 0; text-align:center;">
-      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.65rem; color:var(--fog); margin-bottom:.4rem;">CÓDIGO DE RETIRO</p>
-      <p id="qr-codigo" style="
-        font-family:'Permanent Marker',cursive;
-        font-size:1.5rem; color:var(--yellow);
-        text-shadow:1px 1px 0 rgba(0,0,0,.5);
-        letter-spacing:2px;
-      ">—</p>
-    </div>
-
-    <!-- QR -->
-    <div style="padding:1.2rem 2rem; text-align:center;">
-      <div style="
-        display:inline-block;
-        background:#fff;
-        padding:12px;
-        border:3px solid var(--red);
-        box-shadow:0 0 30px rgba(192,57,43,.3);
-      ">
-        <div id="qr-canvas" style="line-height:0;"></div>
-      </div>
-      <p style="font-size:.72rem; color:var(--fog); margin-top:.7rem; font-family:'Bebas Neue',sans-serif; letter-spacing:2px;">
-        MOSTRÁ ESTE QR EN EL LOCAL PARA RETIRAR TU PEDIDO
-      </p>
-    </div>
-
-    <!-- Detalle de la orden -->
-    <div style="padding:0 2rem 1.2rem;">
-      <p style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.65rem; color:var(--fog); margin-bottom:.7rem;">DETALLE DE TU COMPRA</p>
-      <div id="qr-items" style="
-        background:var(--smoke);
-        border:1px solid var(--ash);
-        padding:.8rem 1rem;
-        max-height:140px; overflow-y:auto;
-      "></div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.7rem; padding-top:.7rem; border-top:1px solid var(--ash);">
-        <span style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.7rem; color:var(--fog);">FECHA</span>
-        <span id="qr-fecha" style="font-family:'Bebas Neue',sans-serif; font-size:.8rem; color:var(--bone);"></span>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.4rem;">
-        <span style="font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.7rem; color:var(--fog);">TOTAL</span>
-        <span id="qr-total" style="font-family:'Permanent Marker',cursive; font-size:1.1rem; color:var(--cream); text-shadow:1px 1px 0 var(--red);"></span>
-      </div>
-    </div>
-
-    <!-- Aviso retiro -->
-    <div style="margin:0 2rem 1.5rem; background:rgba(39,174,96,.08); border:1px solid rgba(39,174,96,.25); border-left:3px solid #27ae60; padding:.8rem 1rem;">
-      <p style="font-size:.78rem; line-height:1.6; color:var(--bone);">
-        📍 <strong>Retiro solo en local.</strong> No realizamos envíos.<br>
-        Presentá este QR o el código <span id="qr-codigo-inline" style="color:var(--yellow); font-family:'Permanent Marker',cursive;"></span> al momento de retirar.
-      </p>
-    </div>
-
-    <!-- Botones -->
-    <div style="padding:0 2rem 2rem; display:flex; flex-direction:column; gap:.7rem;">
-      <button onclick="descargarQR()" style="
-        width:100%; padding:.9rem;
-        background:var(--red); color:var(--cream);
-        border:2px solid var(--red-hot); cursor:pointer;
-        font-family:'Bebas Neue',sans-serif; letter-spacing:4px; font-size:.82rem;
-        clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
-        transition:background .3s, box-shadow .3s;
-      "
-      onmouseenter="this.style.background='var(--red-hot)';this.style.boxShadow='0 0 25px rgba(231,76,60,.5)'"
-      onmouseleave="this.style.background='var(--red)';this.style.boxShadow='none'"
-      >
-        ⬇ Descargar QR como imagen
-      </button>
-      <button onclick="cerrarModalPagoOk()" style="
-        width:100%; padding:.7rem;
-        background:transparent; color:var(--fog);
-        border:1px solid var(--ash); cursor:pointer;
-        font-family:'Bebas Neue',sans-serif; letter-spacing:3px; font-size:.7rem;
-        transition:all .3s;
-      "
-      onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)'"
-      onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--fog)'"
-      >
-        Cerrar
-      </button>
-    </div>
-  </div>
-</div>
-
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-<script>
-  // ── Modales de retiro y pago ──────────────────────────────
-
-  function abrirModalRetiro() {
-    if (carrito.length === 0) return;
-    const m = document.getElementById('modal-retiro');
-    m.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  }
-
-  function cerrarModalRetiro() {
-    document.getElementById('modal-retiro').style.display = 'none';
-    document.body.style.overflow = '';
-  }
-
-  async function confirmarPago() {
-    cerrarModalRetiro();
-    // Llamar la función real de pago
-    const btn = document.getElementById('btn-pagar');
-    btn.textContent = 'Procesando...';
-    btn.disabled = true;
-    try {
-      const res = await fetch('/api/crear-preferencia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: carrito.map(i => ({ nombre: i.nombre, precio: i.precio, cantidad: i.cantidad })) })
-      });
-      const data = await res.json();
-      if (data.init_point) {
-        // Guardar carrito en sessionStorage antes de ir a MercadoPago
-        sessionStorage.setItem('carritoGuardado', JSON.stringify(carrito));
-        window.location.href = data.init_point;
-      } else {
-        alert('Error al procesar el pago. Intentá de nuevo.');
-        console.error(data);
-      }
-    } catch(e) {
-      alert('Error de conexión. Intentá de nuevo.');
-      console.error(e);
-    } finally {
-      btn.textContent = 'Pagar con MercadoPago ✦';
-      btn.disabled = false;
-    }
-  }
-
-  function cerrarModalPagoOk() {
-    document.getElementById('modal-pago-ok').style.display = 'none';
-    document.body.style.overflow = '';
-  }
-
-  function abrirModalPagoOk(items, codigo, fecha, paymentId) {
-    // Llenar código
-    document.getElementById('qr-codigo').textContent = codigo;
-    document.getElementById('qr-codigo-inline').textContent = codigo;
-
-    // Fecha formateada
-    document.getElementById('qr-fecha').textContent = fecha.toLocaleString('es-AR', {
-      day:'2-digit', month:'2-digit', year:'numeric',
-      hour:'2-digit', minute:'2-digit'
-    });
-
-    // Items del carrito
-    const itemsEl = document.getElementById('qr-items');
-    itemsEl.innerHTML = '';
-    let total = 0;
-    items.forEach(i => {
-      total += i.precio * i.cantidad;
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--ash);';
-      row.innerHTML = `
-        <span style="font-size:.78rem;color:var(--bone);font-family:'Special Elite',serif;">${i.cantidad}× ${i.nombre}</span>
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:.8rem;color:var(--cream);">$${(i.precio*i.cantidad).toLocaleString('es-AR')}</span>
-      `;
-      itemsEl.appendChild(row);
-    });
-    document.getElementById('qr-total').textContent = '$' + total.toLocaleString('es-AR') + ' ARS';
-
-    // El QR apunta a la URL de verificación del local
-    const siteUrl = window.location.origin;
-    const qrData  = `${siteUrl}/api/verificar?codigo=${encodeURIComponent(codigo)}`;
-
-    // Generar QR usando qrcodejs (cargado vía CDN)
-    const canvas = document.getElementById('qr-canvas');
-    canvas.innerHTML = '';
-    // qrcodejs crea un <img> dentro del contenedor
-    new QRCode(canvas, {
-      text:         qrData,
-      width:        220,
-      height:       220,
-      colorDark:    '#000000',
-      colorLight:   '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M
-    });
-
-    // Mostrar modal
-    const m = document.getElementById('modal-pago-ok');
-    m.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  }
-
-  function descargarQR() {
-    const codigo    = document.getElementById('qr-codigo').textContent;
-    const contenedor = document.getElementById('qr-canvas');
-
-    // qrcodejs genera un <img> dentro del contenedor
-    const img = contenedor.querySelector('img');
-    if (!img) { alert('El QR todavía se está generando, intentá en un segundo.'); return; }
-
-    const qrImg  = new Image();
-    qrImg.crossOrigin = 'anonymous';
-    qrImg.onload = function() {
-      const margin = 24;
-      const txtH   = 60;
-      const final  = document.createElement('canvas');
-      final.width  = qrImg.width  + margin * 2;
-      final.height = qrImg.height + margin * 2 + txtH;
-      const ctx    = final.getContext('2d');
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, final.width, final.height);
-
-      ctx.drawImage(qrImg, margin, margin);
-
-      ctx.fillStyle = '#111111';
-      ctx.font      = 'bold 13px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('PRIMITIVO — Tattoo & Piercing', final.width / 2, qrImg.height + margin + 18);
-      ctx.font      = '12px monospace';
-      ctx.fillText('Código de retiro: ' + codigo, final.width / 2, qrImg.height + margin + 36);
-      ctx.fillStyle = '#888888';
-      ctx.font      = '10px monospace';
-      ctx.fillText('Presentá este QR en el local · No se hacen envíos', final.width / 2, qrImg.height + margin + 52);
-
-      const link    = document.createElement('a');
-      link.download = 'retiro-' + codigo + '.png';
-      link.href     = final.toDataURL('image/png');
-      link.click();
-    };
-    qrImg.src = img.src;
-  }
-
-  // Cerrar modales al hacer click fuera
-  document.getElementById('modal-retiro').addEventListener('click', function(e) {
-    if (e.target === this) cerrarModalRetiro();
-  });
-  document.getElementById('modal-pago-ok').addEventListener('click', function(e) {
-    if (e.target === this) cerrarModalPagoOk();
-  });
-</script>
 <script>
   (function() {
     const socials = document.getElementById('footer-socials');
