@@ -1430,17 +1430,14 @@ document.addEventListener('keydown', function(e) {
 
   function bindFiltrosTienda() {
     document.querySelectorAll('.cat-pill').forEach(btn => {
-      btn.replaceWith(btn.cloneNode(true)); // elimina listeners viejos
+      btn.replaceWith(btn.cloneNode(true));
     });
     document.querySelectorAll('.cat-pill').forEach(btn => {
       btn.addEventListener('click', function() {
         document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        const filtro = this.textContent.trim().toLowerCase();
-        document.querySelectorAll('.merch-card').forEach(item => {
-          const cat = (item.dataset.categoria || '').toLowerCase();
-          item.style.display = (filtro === 'todo' || filtro === 'todos' || cat.includes(filtro)) ? '' : 'none';
-        });
+        _tiendaFiltro = this.textContent.trim().toLowerCase();
+        renderTienda(true); // reset a página 1 al filtrar
       });
     });
   }
@@ -1453,11 +1450,8 @@ document.addEventListener('keydown', function(e) {
       btn.addEventListener('click', function() {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        const filtro = this.textContent.trim().toLowerCase();
-        document.querySelectorAll('.port-item').forEach(item => {
-          const cat = (item.dataset.categoria || '').toLowerCase();
-          item.style.display = (filtro === 'todos' || filtro === 'todo' || cat.includes(filtro)) ? '' : 'none';
-        });
+        _portafolioFiltro = this.textContent.trim().toLowerCase();
+        renderPortafolio(true); // reset a página 1 al filtrar
       });
     });
   }
@@ -1552,130 +1546,175 @@ document.addEventListener('keydown', function(e) {
         return urlRaw;
     }
 
-    function mostrarDebug(msg, tipo = 'info') {
-        const d = document.getElementById('primitivo-debug');
-        if (!d) return;
-        const color = tipo === 'error' ? '#e74c3c' : tipo === 'ok' ? '#27ae60' : '#f1c40f';
-        d.innerHTML += `<div style="color:${color};margin:2px 0;font-size:11px;">${msg}</div>`;
-        d.style.display = 'block';
-    }
+    // ── Estado global paginación ──────────────────────────────
+    let _tiendaItems = [];
+    let _tiendaFiltro = 'todo';
+    let _portafolioItems = [];
+    let _portafolioFiltro = 'todos';
+    const POR_PAGINA = 12;
 
+    // ── TIENDA ────────────────────────────────────────────────
     async function cargarTienda() {
         const contenedor = document.getElementById('contenedor-tienda');
         try {
-            mostrarDebug('🛒 Fetching tienda CSV...');
             const response = await fetch(URLS.tienda);
-            mostrarDebug(`🛒 HTTP status: ${response.status} ${response.ok ? '✅' : '❌'}`, response.ok ? 'ok' : 'error');
             const data = await response.text();
-            mostrarDebug(`🛒 CSV recibido: ${data.length} chars, primeros 80: ${data.substring(0,80).replace(/\n/g,' ')}`);
-            contenedor.innerHTML = '';
-
             const lineas = data.split('\n').filter(l => l.trim() !== '').slice(1);
-            mostrarDebug(`🛒 Filas de datos (sin header): ${lineas.length}`, lineas.length > 0 ? 'ok' : 'error');
-
             if (lineas.length === 0) {
-                contenedor.innerHTML = '<p style="color:#e74c3c;font-family:monospace;padding:2rem;">⚠️ La hoja "Tienda" no tiene filas de datos. Revisá que la sheet esté publicada como CSV.</p>';
+                contenedor.innerHTML = '<p style="color:#e74c3c;font-family:monospace;padding:2rem;">⚠️ Sin datos en Tienda.</p>';
                 return;
             }
-
             const placeholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%231F1F1F"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23555" font-size="14" font-family="monospace" dy=".3em"%3ESIN IMAGEN%3C/text%3E%3C/svg%3E';
-            const fragmentos = [];
+            _tiendaItems = [];
+            lineas.forEach(linea => {
+                const p = parseCSVLine(linea);
+                if (p.length < 2) return;
+                _tiendaItems.push({
+                    categoria: p[0], nombre: p[1], precio: p[2] || '0',
+                    urlImg: fixImgUrl(p[3] || '') || placeholder,
+                    esNuevo: (p[4] || '').toLowerCase()
+                });
+            });
+            _tiendaFiltro = 'todo';
+            renderTienda(true);
+            bindFiltrosTienda();
+        } catch (e) {
+            console.error("Error Tienda:", e);
+            contenedor.innerHTML = `<p style="color:#e74c3c;font-family:monospace;padding:2rem;">Error: ${e.message}</p>`;
+        }
+    }
 
-            lineas.forEach((linea, idx) => {
-                const partes = parseCSVLine(linea);
-                mostrarDebug(`🛒 Fila ${idx+1}: ${partes.length} columnas | img="${partes[3] ? partes[3].substring(0,60) : 'vacía'}"`);
-                if (partes.length < 2) return;
+    function renderTienda(reset) {
+        const contenedor = document.getElementById('contenedor-tienda');
+        const placeholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%231F1F1F"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23555" font-size="14" font-family="monospace" dy=".3em"%3ESIN IMAGEN%3C/text%3E%3C/svg%3E';
+        if (reset) contenedor.dataset.visible = POR_PAGINA;
+        const visible = parseInt(contenedor.dataset.visible) || POR_PAGINA;
 
-                const categoria = partes[0];
-                const nombre    = partes[1];
-                const precio    = partes[2] || '0';
-                const urlRaw    = partes[3] || '';
-                const esNuevo   = (partes[4] || '').toLowerCase();
-                const flagNuevo = esNuevo === 'si' ? 'si' : '';
+        const filtrados = (_tiendaFiltro === 'todo' || _tiendaFiltro === 'todos')
+            ? _tiendaItems
+            : _tiendaItems.filter(i => i.categoria.toLowerCase().includes(_tiendaFiltro));
 
-                const urlImg = fixImgUrl(urlRaw) || placeholder;
-                const nomEsc  = nombre.replace(/'/g, "\\'");
-                const catEsc2 = categoria.replace(/'/g, "\\'");
-                const imgEsc  = urlImg.replace(/'/g, "%27");
+        const mostrar = filtrados.slice(0, visible);
+        const quedan  = filtrados.length - visible;
 
-                fragmentos.push(`
-                    <div class="merch-card" data-categoria="${categoria.toLowerCase()}" onclick="abrirLightbox('${imgEsc}', '${catEsc2}', '${nomEsc}')">
+        const frags = mostrar.map(({ categoria, nombre, precio, urlImg, esNuevo }) => {
+            const nomEsc = nombre.replace(/'/g, "\\'");
+            const catEsc = categoria.replace(/'/g, "\\'");
+            const imgEsc = urlImg.replace(/'/g, "%27");
+            return `<div class="merch-card" data-categoria="${categoria.toLowerCase()}" onclick="abrirLightbox('${imgEsc}','${catEsc}','${nomEsc}')">
                         <div class="merch-thumb">
-                            <img src="${urlImg}" alt="${nombre}"
-                                 style="width:100%;height:100%;object-fit:cover;position:absolute;"
-                                 onerror="this.src='${placeholder}'">
+                            <img src="${urlImg}" alt="${nombre}" style="width:100%;height:100%;object-fit:cover;position:absolute;" onerror="this.src='${placeholder}'">
                             <div class="merch-thumb-pattern"></div>
                             <div class="merch-thumb-overlay"><span>Ver foto ⊕</span></div>
-                            ${flagNuevo === 'si' ? '<div class="merch-badge">NUEVO</div>' : ''}
+                            ${esNuevo === 'si' ? '<div class="merch-badge">NUEVO</div>' : ''}
                         </div>
                         <div class="merch-info">
                             <p class="merch-cat-label">${categoria}</p>
                             <p class="merch-name">${nombre}</p>
                             <p class="merch-price"><strong>$${precio} ARS</strong></p>
                         </div>
-                        <button class="merch-add" onclick="event.stopPropagation(); agregarAlCarrito('${nomEsc}', '${catEsc2}', ${parseFloat(precio)||0}, '${imgEsc}')"><span>+ Agregar al carrito</span></button>
-                    </div>`);
-            });
-            contenedor.innerHTML = fragmentos.join('');
-            bindFiltrosTienda();
-        } catch (e) {
-            mostrarDebug(`❌ Error Tienda: ${e.message}`, 'error');
-            console.error("Error Tienda:", e);
-            if (contenedor) contenedor.innerHTML = `<p style="color:#e74c3c;font-family:monospace;padding:2rem;">Error al cargar productos: ${e.message}</p>`;
-        }
+                        <button class="merch-add" onclick="event.stopPropagation();agregarAlCarrito('${nomEsc}','${catEsc}',${parseFloat(precio)||0},'${imgEsc}')"><span>+ Agregar al carrito</span></button>
+                    </div>`;
+        });
+
+        if (quedan > 0) frags.push(`
+            <div style="grid-column:1/-1;text-align:center;margin:2rem 0;">
+                <button onclick="tiendaVerMas()" style="
+                    font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:4px;
+                    padding:.85rem 2.5rem;background:transparent;color:var(--bone);
+                    border:2px solid var(--ash);cursor:pointer;transition:all .3s;
+                    clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+                " onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)';this.style.background='rgba(192,57,43,.1)'"
+                   onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--bone)';this.style.background='transparent'">
+                    VER MÁS · ${quedan} producto${quedan !== 1 ? 's' : ''}
+                </button>
+            </div>`);
+
+        contenedor.innerHTML = frags.join('');
+        contenedor.dataset.visible = visible;
     }
 
+    function tiendaVerMas() {
+        const c = document.getElementById('contenedor-tienda');
+        c.dataset.visible = (parseInt(c.dataset.visible) || POR_PAGINA) + POR_PAGINA;
+        renderTienda(false);
+    }
+
+    // ── PORTAFOLIO ────────────────────────────────────────────
     async function cargarPortafolio() {
         const contenedor = document.getElementById('grid-portafolio-dinamico');
         try {
-            mostrarDebug('🎨 Fetching portafolio CSV...');
             const response = await fetch(URLS.portafolio);
-            mostrarDebug(`🎨 HTTP status: ${response.status} ${response.ok ? '✅' : '❌'}`, response.ok ? 'ok' : 'error');
             const data = await response.text();
-            contenedor.innerHTML = '';
-
             const lineas = data.split('\n').filter(l => l.trim() !== '').slice(1);
-            mostrarDebug(`🎨 Filas portafolio: ${lineas.length}`, lineas.length > 0 ? 'ok' : 'error');
-
             if (lineas.length === 0) {
-                contenedor.innerHTML = '<p style="color:#e74c3c;font-family:monospace;padding:2rem;column-span:all;">⚠️ La hoja "Portafolio" no tiene filas de datos.</p>';
+                contenedor.innerHTML = '<p style="color:#e74c3c;font-family:monospace;padding:2rem;column-span:all;">⚠️ Sin datos en Portafolio.</p>';
                 return;
             }
-
-            const fragmentos = [];
-            lineas.forEach((linea, idx) => {
-                const partes = parseCSVLine(linea);
-                if (partes.length < 2) return;
-
-                const categoria = partes[0];
-                const artista   = partes[1];
-                const urlRaw    = partes[2] || '';
-                const urlImg    = fixImgUrl(urlRaw);
-                mostrarDebug(`🎨 Fila ${idx+1}: img="${urlRaw ? urlRaw.substring(0,60) : 'vacía'}" → ok=${!!urlImg}`);
-
+            _portafolioItems = [];
+            lineas.forEach(linea => {
+                const p = parseCSVLine(linea);
+                if (p.length < 2) return;
+                const urlImg = fixImgUrl(p[2] || '');
                 if (!urlImg) return;
+                _portafolioItems.push({ categoria: p[0], artista: p[1], urlImg });
+            });
+            _portafolioFiltro = 'todos';
+            renderPortafolio(true);
+            bindFiltrosPortafolio();
+        } catch (e) {
+            console.error("Error Portafolio:", e);
+        }
+    }
 
-                const catEsc = categoria.replace(/'/g, "\\'");
-                const artEsc = artista.replace(/'/g, "\\'");
-                const imgEsc = urlImg.replace(/'/g, "%27");
+    function renderPortafolio(reset) {
+        const contenedor = document.getElementById('grid-portafolio-dinamico');
+        if (reset) contenedor.dataset.visible = POR_PAGINA;
+        const visible = parseInt(contenedor.dataset.visible) || POR_PAGINA;
 
-                fragmentos.push(`
-                    <div class="port-item" data-categoria="${categoria.toLowerCase()}" onclick="abrirLightbox('${imgEsc}', '${catEsc}', '${artEsc}')">
-                        <div class="port-bg" style="background-image: url('${urlImg}');"></div>
+        const filtrados = (_portafolioFiltro === 'todos' || _portafolioFiltro === 'todo')
+            ? _portafolioItems
+            : _portafolioItems.filter(i => i.categoria.toLowerCase().includes(_portafolioFiltro));
+
+        const mostrar = filtrados.slice(0, visible);
+        const quedan  = filtrados.length - visible;
+
+        const frags = mostrar.map(({ categoria, artista, urlImg }) => {
+            const catEsc = categoria.replace(/'/g, "\\'");
+            const artEsc = artista.replace(/'/g, "\\'");
+            const imgEsc = urlImg.replace(/'/g, "%27");
+            return `<div class="port-item" data-categoria="${categoria.toLowerCase()}" onclick="abrirLightbox('${imgEsc}','${catEsc}','${artEsc}')">
+                        <div class="port-bg" style="background-image:url('${urlImg}');"></div>
                         <div class="port-overlay"></div>
                         <div class="port-zoom">⊕</div>
                         <div class="port-info">
                             <p class="port-style">${categoria}</p>
                             <p class="port-artist">Por: ${artista}</p>
                         </div>
-                    </div>`);
-            });
-            contenedor.innerHTML = fragmentos.join('');
-            bindFiltrosPortafolio();
-        } catch (e) {
-            mostrarDebug(`❌ Error Portafolio: ${e.message}`, 'error');
-            console.error("Error Portafolio:", e);
-        }
+                    </div>`;
+        });
+
+        if (quedan > 0) frags.push(`
+            <div style="column-span:all;text-align:center;margin:2rem 0;">
+                <button onclick="portafolioVerMas()" style="
+                    font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:4px;
+                    padding:.85rem 2.5rem;background:transparent;color:var(--bone);
+                    border:2px solid var(--ash);cursor:pointer;transition:all .3s;
+                    clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+                " onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)';this.style.background='rgba(192,57,43,.1)'"
+                   onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--bone)';this.style.background='transparent'">
+                    VER MÁS · ${quedan} foto${quedan !== 1 ? 's' : ''}
+                </button>
+            </div>`);
+
+        contenedor.innerHTML = frags.join('');
+        contenedor.dataset.visible = visible;
+    }
+
+    function portafolioVerMas() {
+        const c = document.getElementById('grid-portafolio-dinamico');
+        c.dataset.visible = (parseInt(c.dataset.visible) || POR_PAGINA) + POR_PAGINA;
+        renderPortafolio(false);
     }
 
     function pedirPorWA(prod) {
@@ -1688,6 +1727,7 @@ document.addEventListener('keydown', function(e) {
         cargarTienda();
         cargarPortafolio();
     });
+</script>
 </script>
 
 <!-- ══════ CARRITO ══════ -->
@@ -2188,12 +2228,6 @@ document.addEventListener('keydown', function(e) {
   </div>
 </div>
 
-<!-- ═══ PANEL DEBUG ═══ -->
-<div id="primitivo-debug" style="display:none;position:fixed;bottom:0;left:0;right:0;max-height:220px;overflow-y:auto;background:rgba(0,0,0,.92);border-top:2px solid #e74c3c;padding:8px 12px;z-index:99999;font-family:monospace;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-    <strong style="color:#f1c40f;font-size:11px;">🔧 DEBUG</strong>
-    <button onclick="document.getElementById('primitivo-debug').style.display='none'" style="background:none;border:1px solid #555;color:#aaa;font-size:10px;cursor:pointer;padding:2px 6px;">✕</button>
-  </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
