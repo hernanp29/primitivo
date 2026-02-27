@@ -453,142 +453,105 @@
       background:var(--red); color:var(--cream); border-color:var(--red-hot);
     }
 
-    /* ── PORTFOLIO GRID ── */
-    .portfolio-grid {
-      columns: 4;
-      column-gap: 6px;
+    /* ── CARRUSEL POR CATEGORÍA ── */
+    .cat-row { margin-bottom: 3rem; }
+
+    .cat-row-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem; padding-bottom: .6rem;
+      border-bottom: 1px solid rgba(192,57,43,.25);
+    }
+    .cat-row-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem; letter-spacing: 5px; color: var(--cream);
+      display: flex; align-items: center; gap: .8rem;
+    }
+    .cat-row-title::before {
+      content:''; width: 4px; height: 1rem;
+      background: var(--red); box-shadow: 0 0 8px var(--red);
+    }
+    .cat-count { font-family:'Bebas Neue',sans-serif; font-size:.6rem; letter-spacing:3px; color:var(--fog); }
+
+    .carrusel-wrap { position: relative; }
+    .carrusel-track-outer { overflow: hidden; }
+    .carrusel-track {
+      display: flex; gap: 6px;
+      transition: transform .45s cubic-bezier(.25,.46,.45,.94);
+      will-change: transform;
     }
 
-    .port-item {
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-      break-inside: avoid;
-      margin-bottom: 6px;
-      background: var(--smoke);
+    .car-item {
+      flex: 0 0 calc(25% - 5px);
+      aspect-ratio: 3/4;
+      position: relative; overflow: hidden; cursor: pointer;
       border: 1px solid rgba(192,57,43,.12);
-      transition: border-color .35s;
+      transition: border-color .3s;
+      background: var(--smoke);
     }
-    .port-item:hover { border-color: rgba(192,57,43,.55); }
-
-    /* Varied heights for masonry feel */
-    .port-item:nth-child(3n+1) { aspect-ratio: 3/4; }
-    .port-item:nth-child(3n+2) { aspect-ratio: 1/1; }
-    .port-item:nth-child(3n)   { aspect-ratio: 4/5; }
-
-    .port-bg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-      transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    .car-item:hover { border-color: rgba(192,57,43,.6); }
+    .car-img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform .5s cubic-bezier(.25,.46,.45,.94);
     }
-    .port-item:hover .port-bg { transform: scale(1.08); }
-
-    /* Red corner accent */
-    .port-item::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0;
-      width: 0; height: 0;
-      border-style: solid;
-      border-width: 28px 28px 0 0;
+    .car-item:hover .car-img { transform: scale(1.07); }
+    .car-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 55%);
+      opacity: .65; transition: opacity .3s; z-index: 1;
+    }
+    .car-item:hover .car-overlay { opacity: 1; }
+    .car-corner {
+      position: absolute; top: 0; left: 0; width: 0; height: 0;
+      border-style: solid; border-width: 24px 24px 0 0;
       border-color: var(--red) transparent transparent transparent;
-      z-index: 10;
-      opacity: 0;
-      transition: opacity .3s;
+      opacity: 0; transition: opacity .3s; z-index: 3;
     }
-    .port-item:hover::before { opacity: 1; }
-
-    .port-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        to top,
-        rgba(10,0,0,.92) 0%,
-        rgba(0,0,0,.2) 50%,
-        transparent 100%
-      );
-      opacity: 0.7;
-      transition: opacity 0.35s;
-      z-index: 2;
-    }
-    .port-item:hover .port-overlay { opacity: 1; }
-
-    /* Zoom icon on hover */
-    .port-zoom {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%,-50%) scale(0.7);
-      width: 50px; height: 50px;
-      border: 2px solid rgba(255,255,255,.6);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem;
-      color: white;
-      opacity: 0;
-      transition: opacity .35s, transform .35s;
-      z-index: 4;
-      backdrop-filter: blur(4px);
-      background: rgba(192,57,43,.3);
-    }
-    .port-item:hover .port-zoom {
-      opacity: 1;
-      transform: translate(-50%,-50%) scale(1);
-    }
-
-    .port-info {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      padding: 1.2rem 1.4rem;
-      z-index: 3;
-      transform: translateY(6px);
-      opacity: 0;
+    .car-item:hover .car-corner { opacity: 1; }
+    .car-info {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: .9rem 1rem; z-index: 2;
+      transform: translateY(6px); opacity: 0;
       transition: all .35s cubic-bezier(.16,1,.3,1);
     }
-    .port-item:hover .port-info { transform: translateY(0); opacity: 1; }
-
-    .port-style {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: .6rem; letter-spacing: 5px;
-      color: var(--red-hot);
-      margin-bottom: .3rem;
-      text-transform: uppercase;
+    .car-item:hover .car-info { transform: translateY(0); opacity: 1; }
+    .car-cat { font-family:'Bebas Neue',sans-serif; font-size:.55rem; letter-spacing:4px; color:var(--red-hot); margin-bottom:.2rem; }
+    .car-name { font-family:'Permanent Marker',cursive; font-size:.95rem; color:var(--cream); text-shadow:1px 1px 0 var(--red); }
+    .car-zoom {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%) scale(.7);
+      width: 42px; height: 42px;
+      border: 2px solid rgba(255,255,255,.5); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: white;
+      opacity: 0; transition: all .3s; z-index: 3;
+      background: rgba(192,57,43,.3); backdrop-filter: blur(4px);
     }
-    .port-artist {
-      font-family: 'Permanent Marker', cursive;
-      font-size: 1.1rem;
-      color: var(--cream);
-      text-shadow: 1px 1px 0 var(--red);
-    }
+    .car-item:hover .car-zoom { opacity: 1; transform: translate(-50%,-50%) scale(1); }
 
-    /* Loading skeleton */
-    .port-skeleton {
-      background: linear-gradient(90deg, var(--smoke) 25%, var(--ash) 50%, var(--smoke) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      aspect-ratio: 1;
-      break-inside: avoid;
-      margin-bottom: 6px;
+    .car-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+      width: 40px; height: 40px;
+      background: rgba(13,13,13,.9); border: 1px solid rgba(192,57,43,.4);
+      color: var(--cream); font-size: 1.2rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .3s; backdrop-filter: blur(4px);
     }
-    @keyframes shimmer { to { background-position: -200% 0; } }
+    .car-arrow:hover { background:var(--red); border-color:var(--red-hot); box-shadow:0 0 20px rgba(192,57,43,.5); }
+    .car-arrow-prev { left: -20px; }
+    .car-arrow-next { right: -20px; }
+    .car-arrow:disabled { opacity:.2; cursor:default; pointer-events:none; }
 
-    /* Empty state */
-    .port-empty {
-      column-span: all;
-      text-align: center;
-      padding: 5rem 2rem;
-      color: var(--fog);
-      font-family: 'Bebas Neue', sans-serif;
-      letter-spacing: 4px;
-      font-size: .9rem;
-    }
+    .car-dots { display:flex; gap:5px; justify-content:center; margin-top:.7rem; }
+    .car-dot { width:20px; height:2px; background:var(--ash); cursor:pointer; transition:all .3s; border:none; padding:0; }
+    .car-dot.active { background:var(--red); box-shadow:0 0 6px var(--red); width:32px; }
 
-    @media (max-width: 1100px) { .portfolio-grid { columns: 3; } }
-    @media (max-width: 768px)  { .portfolio-grid { columns: 2; } }
-    @media (max-width: 480px)  { .portfolio-grid { columns: 1; } }
+    /* Carrusel tienda — items más cuadrados */
+    .car-item.tienda { aspect-ratio: 1/1; }
+
+    @media(max-width:1100px){ .car-item { flex: 0 0 calc(33.333% - 4px); } }
+    @media(max-width:700px) { .car-item { flex: 0 0 calc(50% - 3px); } }
+    @media(max-width:420px) { .car-item { flex: 0 0 100%; } }
 
     /* ═══════════════════════════════
        MASCOT QUOTE BANNER
@@ -1180,19 +1143,10 @@
       <p class="section-eyebrow">Nuestro trabajo</p>
       <h2 class="section-title">El Portafolio<br>no Miente</h2>
     </div>
-    <div class="style-filters">
-        <button class="filter-btn active">Todos</button>
-        <button class="filter-btn">Tattoo</button>
-        <button class="filter-btn">Piercing</button>
-    </div>
   </div>
 
-  <div class="portfolio-grid" id="grid-portafolio-dinamico">
-    <p style="color: white;">Cargando portafolio...</p>
-  </div>
-
-  <div style="text-align:center;margin-top:2.5rem;">
-    <a href="#" class="btn-ghost">Ver portafolio completo →</a>
+  <div id="grid-portafolio-dinamico">
+    <p style="color:var(--fog);font-family:'Bebas Neue',sans-serif;letter-spacing:4px;font-size:.8rem;">Cargando portafolio...</p>
   </div>
 </section>
 
@@ -1216,18 +1170,12 @@
     <div>
       <p class="section-eyebrow">Rock Merch Store</p>
       <h2 class="section-title">Lucí<br>la Actitud</h2>
-      <div class="cat-pills">
-        <button class="cat-pill active">Todo</button>
-        <button class="cat-pill">Piercings</button>
-        <button class="cat-pill">Ropa</button>
-        <button class="cat-pill">Accesorios</button>
-      </div>
     </div>
     <a href="#" class="btn-ghost" style="align-self:flex-start;margin-top:1rem">Tienda completa →</a>
   </div>
 
-  <div class="merch-grid" id="contenedor-tienda">
-    <p style="color: white; text-align: center; grid-column: 1/-1;">Cargando productos...</p>
+  <div id="contenedor-tienda">
+    <p style="color:var(--fog);font-family:'Bebas Neue',sans-serif;letter-spacing:4px;font-size:.8rem;">Cargando tienda...</p>
   </div>
 </section>
 
@@ -1425,37 +1373,7 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 
-<script>
-  // Las cards se cargan async → los filtros se bindean DESPUÉS de que carguen
 
-  function bindFiltrosTienda() {
-    document.querySelectorAll('.cat-pill').forEach(btn => {
-      btn.replaceWith(btn.cloneNode(true));
-    });
-    document.querySelectorAll('.cat-pill').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        _tiendaFiltro = this.textContent.trim().toLowerCase();
-        renderTienda(true); // reset a página 1 al filtrar
-      });
-    });
-  }
-
-  function bindFiltrosPortafolio() {
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.replaceWith(btn.cloneNode(true));
-    });
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        _portafolioFiltro = this.textContent.trim().toLowerCase();
-        renderPortafolio(true); // reset a página 1 al filtrar
-      });
-    });
-  }
-</script>
 
 
 
@@ -1546,14 +1464,128 @@ document.addEventListener('keydown', function(e) {
         return urlRaw;
     }
 
-    // ── Estado global paginación ──────────────────────────────
+    // ── Estado global carruseles ──────────────────────────────
     let _tiendaItems = [];
-    let _tiendaFiltro = 'todo';
     let _portafolioItems = [];
-    let _portafolioFiltro = 'todos';
-    const POR_PAGINA = 12;
+    const _carState = {};
+    const ITEMS_VISIBLES = 4;
 
     // ── TIENDA ────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════
+    //  CARRUSEL — funciones compartidas
+    // ═══════════════════════════════════════════════════════════
+    function crearCarrusel(contenedor, catNombre, items, esTienda) {
+        const id = 'car-' + catNombre.replace(/[^a-zA-Z0-9]/g,'_') + '_' + Math.random().toString(36).slice(2,6);
+        const total  = items.length;
+        const vis    = ITEMS_VISIBLES;
+        const maxPag = Math.max(0, Math.ceil(total / vis) - 1);
+
+        const itemsHTML = items.map(item => {
+            if (esTienda) {
+                const nomEsc = item.nombre.replace(/'/g,"\'");
+                const catEsc = catNombre.replace(/'/g,"\'");
+                const imgEsc = item.urlImg.replace(/'/g,"%27");
+                return `<div class="car-item tienda" onclick="abrirLightbox('${imgEsc}','${catEsc}','${nomEsc}')">
+                    <img class="car-img" src="${item.urlImg}" alt="${item.nombre}" loading="lazy">
+                    <div class="car-overlay"></div>
+                    <div class="car-corner"></div>
+                    <div class="car-zoom">⊕</div>
+                    <div class="car-info">
+                        <p class="car-cat">${catNombre}</p>
+                        <p class="car-name">${item.nombre}</p>
+                        <p style="font-family:'Bebas Neue',sans-serif;font-size:.7rem;color:var(--yellow);margin-top:.2rem;">$${item.precio} ARS</p>
+                    </div>
+                    <button class="merch-add" style="position:absolute;bottom:0;left:0;right:0;z-index:5;"
+                        onclick="event.stopPropagation();agregarAlCarrito('${nomEsc}','${catEsc}',${parseFloat(item.precio)||0},'${imgEsc}')">
+                        <span>+ Agregar al carrito</span>
+                    </button>
+                    ${item.esNuevo === 'si' ? '<div class="merch-badge" style="position:absolute;top:.6rem;right:.6rem;z-index:5;">NUEVO</div>' : ''}
+                </div>`;
+            } else {
+                const catEsc = catNombre.replace(/'/g,"\'");
+                const artEsc = item.artista.replace(/'/g,"\'");
+                const imgEsc = item.urlImg.replace(/'/g,"%27");
+                return `<div class="car-item" onclick="abrirLightbox('${imgEsc}','${catEsc}','${artEsc}')">
+                    <img class="car-img" src="${item.urlImg}" alt="${catNombre}" loading="lazy">
+                    <div class="car-overlay"></div>
+                    <div class="car-corner"></div>
+                    <div class="car-zoom">⊕</div>
+                    <div class="car-info">
+                        <p class="car-cat">${catNombre}</p>
+                        <p class="car-name">${item.artista}</p>
+                    </div>
+                </div>`;
+            }
+        }).join('');
+
+        const dotsHTML = maxPag > 0
+            ? Array.from({length: maxPag + 1}, (_,i) =>
+                `<button class="car-dot ${i===0?'active':''}" onclick="irACar('${id}',${i})"></button>`
+              ).join('')
+            : '';
+
+        const row = document.createElement('div');
+        row.className = 'cat-row';
+        row.innerHTML = `
+            <div class="cat-row-header">
+                <span class="cat-row-title">${catNombre}</span>
+                <span class="cat-count">${total} ${esTienda ? 'producto' : 'foto'}${total !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="carrusel-wrap">
+                <button class="car-arrow car-arrow-prev" id="${id}-prev" onclick="moverCar('${id}',-1)" disabled>&#8249;</button>
+                <div class="carrusel-track-outer">
+                    <div class="carrusel-track" id="${id}-track">${itemsHTML}</div>
+                </div>
+                <button class="car-arrow car-arrow-next" id="${id}-next" onclick="moverCar('${id}',1)" ${maxPag===0?'disabled':''}>&#8250;</button>
+            </div>
+            ${dotsHTML ? `<div class="car-dots" id="${id}-dots">${dotsHTML}</div>` : ''}
+        `;
+        contenedor.appendChild(row);
+        _carState[id] = { pagina: 0, maxPag };
+    }
+
+    function moverCar(id, dir) {
+        const state = _carState[id];
+        if (!state) return;
+        irACar(id, Math.max(0, Math.min(state.pagina + dir, state.maxPag)));
+    }
+
+    function irACar(id, pag) {
+        const state = _carState[id];
+        if (!state) return;
+        state.pagina = pag;
+
+        const track = document.getElementById(id + '-track');
+        if (!track) return;
+        const item = track.querySelector('.car-item');
+        if (!item) return;
+
+        const itemW = item.offsetWidth + 6;
+        track.style.transform = `translateX(-${pag * ITEMS_VISIBLES * itemW}px)`;
+
+        const prev = document.getElementById(id + '-prev');
+        const next = document.getElementById(id + '-next');
+        if (prev) prev.disabled = pag === 0;
+        if (next) next.disabled = pag === state.maxPag;
+
+        const dots = document.querySelectorAll(`#${id}-dots .car-dot`);
+        dots.forEach((d, i) => d.classList.toggle('active', i === pag));
+    }
+
+    // ── Agrupar items por categoría ──────────────────────────
+    function agruparPorCategoria(items) {
+        const mapa = new Map();
+        items.forEach(item => {
+            const cat = item.categoria || 'Sin categoría';
+            if (!mapa.has(cat)) mapa.set(cat, []);
+            mapa.get(cat).push(item);
+        });
+        return mapa;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  TIENDA
+    // ═══════════════════════════════════════════════════════════
     async function cargarTienda() {
         const contenedor = document.getElementById('contenedor-tienda');
         try {
@@ -1575,72 +1607,18 @@ document.addEventListener('keydown', function(e) {
                     esNuevo: (p[4] || '').toLowerCase()
                 });
             });
-            _tiendaFiltro = 'todo';
-            renderTienda(true);
-            bindFiltrosTienda();
+            contenedor.innerHTML = '';
+            const grupos = agruparPorCategoria(_tiendaItems);
+            grupos.forEach((items, cat) => crearCarrusel(contenedor, cat, items, true));
         } catch (e) {
             console.error("Error Tienda:", e);
             contenedor.innerHTML = `<p style="color:#e74c3c;font-family:monospace;padding:2rem;">Error: ${e.message}</p>`;
         }
     }
 
-    function renderTienda(reset) {
-        const contenedor = document.getElementById('contenedor-tienda');
-        const placeholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%231F1F1F"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23555" font-size="14" font-family="monospace" dy=".3em"%3ESIN IMAGEN%3C/text%3E%3C/svg%3E';
-        if (reset) contenedor.dataset.visible = POR_PAGINA;
-        const visible = parseInt(contenedor.dataset.visible) || POR_PAGINA;
-
-        const filtrados = (_tiendaFiltro === 'todo' || _tiendaFiltro === 'todos')
-            ? _tiendaItems
-            : _tiendaItems.filter(i => i.categoria.toLowerCase().includes(_tiendaFiltro));
-
-        const mostrar = filtrados.slice(0, visible);
-        const quedan  = filtrados.length - visible;
-
-        const frags = mostrar.map(({ categoria, nombre, precio, urlImg, esNuevo }) => {
-            const nomEsc = nombre.replace(/'/g, "\\'");
-            const catEsc = categoria.replace(/'/g, "\\'");
-            const imgEsc = urlImg.replace(/'/g, "%27");
-            return `<div class="merch-card" data-categoria="${categoria.toLowerCase()}" onclick="abrirLightbox('${imgEsc}','${catEsc}','${nomEsc}')">
-                        <div class="merch-thumb">
-                            <img src="${urlImg}" alt="${nombre}" style="width:100%;height:100%;object-fit:cover;position:absolute;" onerror="this.src='${placeholder}'">
-                            <div class="merch-thumb-pattern"></div>
-                            <div class="merch-thumb-overlay"><span>Ver foto ⊕</span></div>
-                            ${esNuevo === 'si' ? '<div class="merch-badge">NUEVO</div>' : ''}
-                        </div>
-                        <div class="merch-info">
-                            <p class="merch-cat-label">${categoria}</p>
-                            <p class="merch-name">${nombre}</p>
-                            <p class="merch-price"><strong>$${precio} ARS</strong></p>
-                        </div>
-                        <button class="merch-add" onclick="event.stopPropagation();agregarAlCarrito('${nomEsc}','${catEsc}',${parseFloat(precio)||0},'${imgEsc}')"><span>+ Agregar al carrito</span></button>
-                    </div>`;
-        });
-
-        if (quedan > 0) frags.push(`
-            <div style="grid-column:1/-1;text-align:center;margin:2rem 0;">
-                <button onclick="tiendaVerMas()" style="
-                    font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:4px;
-                    padding:.85rem 2.5rem;background:transparent;color:var(--bone);
-                    border:2px solid var(--ash);cursor:pointer;transition:all .3s;
-                    clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
-                " onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)';this.style.background='rgba(192,57,43,.1)'"
-                   onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--bone)';this.style.background='transparent'">
-                    VER MÁS · ${quedan} producto${quedan !== 1 ? 's' : ''}
-                </button>
-            </div>`);
-
-        contenedor.innerHTML = frags.join('');
-        contenedor.dataset.visible = visible;
-    }
-
-    function tiendaVerMas() {
-        const c = document.getElementById('contenedor-tienda');
-        c.dataset.visible = (parseInt(c.dataset.visible) || POR_PAGINA) + POR_PAGINA;
-        renderTienda(false);
-    }
-
-    // ── PORTAFOLIO ────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════
+    //  PORTAFOLIO
+    // ═══════════════════════════════════════════════════════════
     async function cargarPortafolio() {
         const contenedor = document.getElementById('grid-portafolio-dinamico');
         try {
@@ -1648,7 +1626,7 @@ document.addEventListener('keydown', function(e) {
             const data = await response.text();
             const lineas = data.split('\n').filter(l => l.trim() !== '').slice(1);
             if (lineas.length === 0) {
-                contenedor.innerHTML = '<p style="color:#e74c3c;font-family:monospace;padding:2rem;column-span:all;">⚠️ Sin datos en Portafolio.</p>';
+                contenedor.innerHTML = '<p style="color:#e74c3c;font-family:monospace;padding:2rem;">⚠️ Sin datos en Portafolio.</p>';
                 return;
             }
             _portafolioItems = [];
@@ -1659,62 +1637,12 @@ document.addEventListener('keydown', function(e) {
                 if (!urlImg) return;
                 _portafolioItems.push({ categoria: p[0], artista: p[1], urlImg });
             });
-            _portafolioFiltro = 'todos';
-            renderPortafolio(true);
-            bindFiltrosPortafolio();
+            contenedor.innerHTML = '';
+            const grupos = agruparPorCategoria(_portafolioItems);
+            grupos.forEach((items, cat) => crearCarrusel(contenedor, cat, items, false));
         } catch (e) {
             console.error("Error Portafolio:", e);
         }
-    }
-
-    function renderPortafolio(reset) {
-        const contenedor = document.getElementById('grid-portafolio-dinamico');
-        if (reset) contenedor.dataset.visible = POR_PAGINA;
-        const visible = parseInt(contenedor.dataset.visible) || POR_PAGINA;
-
-        const filtrados = (_portafolioFiltro === 'todos' || _portafolioFiltro === 'todo')
-            ? _portafolioItems
-            : _portafolioItems.filter(i => i.categoria.toLowerCase().includes(_portafolioFiltro));
-
-        const mostrar = filtrados.slice(0, visible);
-        const quedan  = filtrados.length - visible;
-
-        const frags = mostrar.map(({ categoria, artista, urlImg }) => {
-            const catEsc = categoria.replace(/'/g, "\\'");
-            const artEsc = artista.replace(/'/g, "\\'");
-            const imgEsc = urlImg.replace(/'/g, "%27");
-            return `<div class="port-item" data-categoria="${categoria.toLowerCase()}" onclick="abrirLightbox('${imgEsc}','${catEsc}','${artEsc}')">
-                        <div class="port-bg" style="background-image:url('${urlImg}');"></div>
-                        <div class="port-overlay"></div>
-                        <div class="port-zoom">⊕</div>
-                        <div class="port-info">
-                            <p class="port-style">${categoria}</p>
-                            <p class="port-artist">Por: ${artista}</p>
-                        </div>
-                    </div>`;
-        });
-
-        if (quedan > 0) frags.push(`
-            <div style="column-span:all;text-align:center;margin:2rem 0;">
-                <button onclick="portafolioVerMas()" style="
-                    font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:4px;
-                    padding:.85rem 2.5rem;background:transparent;color:var(--bone);
-                    border:2px solid var(--ash);cursor:pointer;transition:all .3s;
-                    clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
-                " onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--cream)';this.style.background='rgba(192,57,43,.1)'"
-                   onmouseleave="this.style.borderColor='var(--ash)';this.style.color='var(--bone)';this.style.background='transparent'">
-                    VER MÁS · ${quedan} foto${quedan !== 1 ? 's' : ''}
-                </button>
-            </div>`);
-
-        contenedor.innerHTML = frags.join('');
-        contenedor.dataset.visible = visible;
-    }
-
-    function portafolioVerMas() {
-        const c = document.getElementById('grid-portafolio-dinamico');
-        c.dataset.visible = (parseInt(c.dataset.visible) || POR_PAGINA) + POR_PAGINA;
-        renderPortafolio(false);
     }
 
     function pedirPorWA(prod) {
@@ -1727,7 +1655,6 @@ document.addEventListener('keydown', function(e) {
         cargarTienda();
         cargarPortafolio();
     });
-</script>
 </script>
 
 <!-- ══════ CARRITO ══════ -->
