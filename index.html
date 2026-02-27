@@ -1434,31 +1434,32 @@ document.addEventListener('keydown', function(e) {
     function fixImgUrl(urlRaw) {
         if (!urlRaw) return "";
 
-        // 1. Ya es URL pública (Cloudinary, http, etc) — usar directamente
-        if (urlRaw.startsWith("https://") || urlRaw.startsWith("http://")) {
+        // 1. Extraer ID de Google Drive (ANTES del check de https)
+        //    Formatos: /file/d/ID/view  |  ?id=ID  |  /d/ID
+        let driveId = null;
+        const matchFileD = urlRaw.match(/\/file\/d\/([a-zA-Z0-9_-]{15,})/);
+        const matchParam = urlRaw.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+        const matchShort = urlRaw.match(/drive\.google\.com\/d\/([a-zA-Z0-9_-]{15,})/);
+        if (matchFileD) driveId = matchFileD[1];
+        else if (matchParam) driveId = matchParam[1];
+        else if (matchShort) driveId = matchShort[1];
+
+        if (driveId) {
+            // Usar uc?export=view — más compatible que thumbnail para fotos públicas
+            return `https://drive.google.com/uc?export=view&id=${driveId}`;
+        }
+
+        // 2. Ya es URL pública de Cloudinary u otro CDN — usar directo
+        if (urlRaw.startsWith("https://res.cloudinary.com") || urlRaw.startsWith("http")) {
             return urlRaw;
         }
 
-        // 2. Ruta de AppSheet (Tienda_Images/ o Portafolio_Images/ etc)
+        // 3. Ruta de AppSheet (Tienda_Images/ o Portafolio_Images/)
         if (urlRaw.includes("_Images/")) {
             const appId = CONFIG.appsheetAppId;
-            // Detectar tabla según prefijo
             let tabla = "Portafolio";
             if (urlRaw.toLowerCase().includes("tienda")) tabla = "Tienda";
-
             return `https://www.appsheet.com/template/gettablefileurl?appName=${appId}&tableName=${tabla}&fileName=${encodeURIComponent(urlRaw)}`;
-        }
-
-        // 3. Link de Google Drive con ID
-        if (urlRaw.includes("id=")) {
-            const id = urlRaw.split("id=")[1].split("&")[0];
-            return `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
-        }
-
-        // 4. Link directo de Google Drive tipo /file/d/{ID}/view
-        const driveMatch = urlRaw.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
-        if (driveMatch) {
-            return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w800`;
         }
 
         return urlRaw;
