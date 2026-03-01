@@ -1520,7 +1520,13 @@ document.addEventListener('keydown', function(e) {
     let _tiendaItems = [];
     let _portafolioItems = [];
     const _carState = {};
-    const ITEMS_VISIBLES = 4;
+    function ITEMS_VISIBLES() {
+        const w = window.innerWidth;
+        if (w <= 420)  return 1;
+        if (w <= 700)  return 2;
+        if (w <= 1100) return 3;
+        return 4;
+    }
 
     // ── TIENDA ────────────────────────────────────────────────
     // ═══════════════════════════════════════════════════════════
@@ -1529,7 +1535,7 @@ document.addEventListener('keydown', function(e) {
     function crearCarrusel(contenedor, catNombre, items, esTienda) {
         const id = 'car-' + catNombre.replace(/[^a-zA-Z0-9]/g,'_') + '_' + Math.random().toString(36).slice(2,6);
         const total  = items.length;
-        const vis    = ITEMS_VISIBLES;
+        const vis    = ITEMS_VISIBLES();
         const maxPag = Math.max(0, Math.ceil(total / vis) - 1);
 
         const itemsHTML = items.map(item => {
@@ -1598,11 +1604,26 @@ document.addEventListener('keydown', function(e) {
         `;
         contenedor.appendChild(row);
         _carState[id] = { pagina: 0, maxPag };
-
-        // Activar swipe táctil
-        const trackOuter = row.querySelector('.carrusel-track-outer');
-        if (trackOuter) activarSwipe(trackOuter, id);
         if (esTienda) construirFiltrosInline(catNombre, items);
+
+        // Swipe táctil
+        const trackOuter = row.querySelector('.carrusel-track-outer');
+        if (trackOuter) {
+            let _tx = 0, _ty = 0;
+            trackOuter.addEventListener('touchstart', e => {
+                _tx = e.touches[0].clientX;
+                _ty = e.touches[0].clientY;
+            }, { passive: true });
+            trackOuter.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].clientX - _tx;
+                const dy = e.changedTouches[0].clientY - _ty;
+                if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+                const st = _carState[id];
+                if (!st) return;
+                if (dx < 0) irACar(id, Math.min(st.pagina + 1, st.maxPag));
+                else        irACar(id, Math.max(st.pagina - 1, 0));
+            }, { passive: true });
+        }
     }
 
     function moverCar(id, dir) {
@@ -1622,7 +1643,7 @@ document.addEventListener('keydown', function(e) {
         if (!item) return;
 
         const itemW = item.offsetWidth + 6;
-        track.style.transform = `translateX(-${pag * ITEMS_VISIBLES * itemW}px)`;
+        track.style.transform = `translateX(-${pag * ITEMS_VISIBLES() * itemW}px)`;
 
         const prev = document.getElementById(id + '-prev');
         const next = document.getElementById(id + '-next');
@@ -1826,7 +1847,7 @@ document.addEventListener('keydown', function(e) {
         track.style.transform = 'translateX(0)';
         const dotsCont = row.querySelector('.car-dots');
         if (dotsCont) {
-            const vis = ITEMS_VISIBLES;
+            const vis = ITEMS_VISIBLES();
             const maxPag = Math.max(0, Math.ceil(filtrados.length / vis) - 1);
             dotsCont.innerHTML = maxPag > 0
                 ? Array.from({length: maxPag+1}, (_,i) =>
@@ -1854,39 +1875,33 @@ document.addEventListener('keydown', function(e) {
         cargarPortafolio();
     });
 
-    // ── Recalcular al rotar pantalla ──────────────────────────
+    // Recalcular carruseles al rotar pantalla
     let _resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(_resizeTimer);
         _resizeTimer = setTimeout(() => {
-            Object.keys(_carState).forEach(id => irACar(id, 0));
-        }, 200);
+            Object.keys(_carState).forEach(id => {
+                const state = _carState[id];
+                const track = document.getElementById(id + '-track');
+                if (!track) return;
+                const total = track.querySelectorAll('.car-item').length;
+                const vis = ITEMS_VISIBLES();
+                const maxPag = Math.max(0, Math.ceil(total / vis) - 1);
+                state.maxPag = maxPag;
+                state.pagina = Math.min(state.pagina, maxPag);
+                irACar(id, state.pagina);
+                // Recalcular dots
+                const dots = document.getElementById(id + '-dots');
+                if (dots) {
+                    dots.innerHTML = Array.from({length: maxPag + 1}, (_,i) =>
+                        `<button class="car-dot ${i===state.pagina?'active':''}" onclick="irACar('${id}',${i})"></button>`
+                    ).join('');
+                }
+                const next = document.getElementById(id + '-next');
+                if (next) next.disabled = state.pagina >= maxPag;
+            });
+        }, 150);
     });
-
-    // ── Swipe táctil en carruseles ────────────────────────────
-    // Se aplica dinámicamente cada vez que se crea un carrusel
-    function activarSwipe(trackOuter, carId) {
-        let startX = 0, startY = 0, dragging = false;
-
-        trackOuter.addEventListener('touchstart', e => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            dragging = true;
-        }, { passive: true });
-
-        trackOuter.addEventListener('touchend', e => {
-            if (!dragging) return;
-            dragging = false;
-            const dx = e.changedTouches[0].clientX - startX;
-            const dy = e.changedTouches[0].clientY - startY;
-            // Solo disparar si el movimiento es más horizontal que vertical
-            if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-            const state = _carState[carId];
-            if (!state) return;
-            if (dx < 0) irACar(carId, Math.min(state.pagina + 1, state.maxPag));
-            else        irACar(carId, Math.max(state.pagina - 1, 0));
-        }, { passive: true });
-    }
 </script>
 
 
