@@ -1598,6 +1598,10 @@ document.addEventListener('keydown', function(e) {
         `;
         contenedor.appendChild(row);
         _carState[id] = { pagina: 0, maxPag };
+
+        // Activar swipe táctil
+        const trackOuter = row.querySelector('.carrusel-track-outer');
+        if (trackOuter) activarSwipe(trackOuter, id);
         if (esTienda) construirFiltrosInline(catNombre, items);
     }
 
@@ -1849,6 +1853,40 @@ document.addEventListener('keydown', function(e) {
         cargarTienda();
         cargarPortafolio();
     });
+
+    // ── Recalcular al rotar pantalla ──────────────────────────
+    let _resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(() => {
+            Object.keys(_carState).forEach(id => irACar(id, 0));
+        }, 200);
+    });
+
+    // ── Swipe táctil en carruseles ────────────────────────────
+    // Se aplica dinámicamente cada vez que se crea un carrusel
+    function activarSwipe(trackOuter, carId) {
+        let startX = 0, startY = 0, dragging = false;
+
+        trackOuter.addEventListener('touchstart', e => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            dragging = true;
+        }, { passive: true });
+
+        trackOuter.addEventListener('touchend', e => {
+            if (!dragging) return;
+            dragging = false;
+            const dx = e.changedTouches[0].clientX - startX;
+            const dy = e.changedTouches[0].clientY - startY;
+            // Solo disparar si el movimiento es más horizontal que vertical
+            if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+            const state = _carState[carId];
+            if (!state) return;
+            if (dx < 0) irACar(carId, Math.min(state.pagina + 1, state.maxPag));
+            else        irACar(carId, Math.max(state.pagina - 1, 0));
+        }, { passive: true });
+    }
 </script>
 
 
